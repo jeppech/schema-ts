@@ -1,0 +1,53 @@
+{
+  "name": "@jeppech/validate-ts",
+  "version": "1.0.0",
+  "description": "Validate some unknown data",
+  "author": "Jeppe Christiansen",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jeppech/validate-ts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jeppech/validate-ts/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "require": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    }
+  },
+  "files": [
+    "lib/**/*"
+  ],
+  "scripts": {
+    "prepare": "pnpm format && pnpm lint && pnpm build",
+    "prepublishOnly": "pnpm lint",
+    "format": "prettier --config .prettierrc --write 'src/**/*.ts'",
+    "lint": "eslint src/",
+    "clean": "rm -rf ./lib/**/*",
+    "build": "pnpm clean && tsc -p tsconfig.json",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "validate",
+    "validation",
+    "data",
+    "type",
+    "typescript"
+  ],
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.15.0",
+    "@typescript-eslint/eslint-plugin": "^8.16.0",
+    "@typescript-eslint/parser": "^8.16.0",
+    "eslint": "^9.15.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@jeppech/results-ts": "^1.2.3"
+  }
+}
