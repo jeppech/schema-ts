@@ -57,15 +57,23 @@ export function parse_object<T extends SchemaProperties>(
   const obj: Record<string, unknown> = {};
 
   try {
-    for (const key in schema) {
+    for (const key in Object.keys(schema)) {
       const valuer = schema[key];
-      if (valuer) {
-        obj[key] = valuer(data[key], key);
-      }
+      const value = data[key];
+
+      obj[key] = valuer(value, key);
     }
-  } catch (err) {
-    return Err(err) as Result<InferObject<T>, Error[]>;
+  } catch (err: unknown) {
+    if (err instanceof ValidationErrors) {
+      return Err(err.errors);
+    }
+
+    if (err instanceof ValidationError) {
+      return Err([err]);
+    }
+
+    return Err([new ValidationError('unknown error', 'unknown', 'unknown', [], err)]);
   }
 
-  return Ok(obj) as Result<InferObject<T>, Error[]>;
+  return Ok(obj as InferObject<T>);
 }
