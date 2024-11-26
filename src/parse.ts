@@ -27,8 +27,8 @@ export function as<T extends Valuer>(valuer: T, ...validators: Validator<InferVa
 }
 
 export function parse_formdata<T extends SchemaProperties>(
-  data: FormData,
   schema: T,
+  data: FormData,
 ): Result<InferObject<T>, ValidationError[]> {
   const obj: Record<string, unknown> = {};
 
@@ -57,9 +57,13 @@ export function parse_formdata<T extends SchemaProperties>(
   return Ok(obj as InferObject<T>);
 }
 
+type SuggestKeys<T extends SchemaProperties> = {
+  [K in keyof T]?: unknown;
+} & { [k: string]: unknown };
+
 export function parse_object<T extends SchemaProperties>(
-  data: Record<string, unknown>,
   schema: T,
+  data: SuggestKeys<T>,
 ): Result<InferObject<T>, ValidationError[]> {
   const obj: Record<string, unknown> = {};
 
