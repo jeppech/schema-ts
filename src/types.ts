@@ -1,4 +1,5 @@
 import type { Option } from '@jeppech/results-ts';
+import { ValidationError } from './errors.js';
 
 export type SchemaProperties = {
   [key: string]: Valuer;
@@ -12,14 +13,14 @@ export type InferObject<T extends SchemaProperties> = {
   [K in keyof T]: InferValue<T[K]>;
 } & unknown;
 
-export type Valuer = (value: unknown) => unknown;
-export type Validator<T> = (value: T) => string | undefined;
+export type Valuer = (value: unknown, field: string) => unknown;
+export type Validator<T> = (value: T, field: string) => ValidationError | undefined;
 
-export type Newable = new (...args: unknown[]) => unknown;
-
-export type InferInstance<T extends Newable> = T extends new (...args: unknown[]) => infer U ? U : never;
-export type InferValue<T extends Valuer, K = unknown> = T extends (val: unknown) => infer U
+export type InferValue<T extends Valuer, K = unknown> = T extends (val: unknown, field: string) => infer U
   ? K extends undefined
     ? Option<U>
     : U
   : never;
+
+export type Newable = new (...args: unknown[]) => unknown;
+export type InferInstance<T extends Newable> = T extends new (...args: unknown[]) => infer U ? U : never;
