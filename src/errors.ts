@@ -21,9 +21,9 @@ export class ValidationError extends Error {
     public params?: unknown[],
 
     /**
-     * If the error was caused by another error, it can be passed here
+     * If the error was caused by an unknown error, it can be passed here
      */
-    cause?: Error,
+    cause?: unknown,
   ) {
     super(message, { cause });
     this.name = 'ValidationError';

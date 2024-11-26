@@ -44,7 +44,7 @@ export function parse_formdata<T extends SchemaProperties>(
       return Err([err]);
     }
 
-    return Err([new ValidationError('unknown error', 'unknown')]);
+    return Err([new ValidationError('unknown error', 'unknown', 'unknown', [], err)]);
   }
 
   return Ok(obj as InferObject<T>);
