@@ -1,5 +1,5 @@
 # Validate unknown data
-[![Npm package version](https://badgen.net/npm/v/@jeppech/validate-ts)](https://npmjs.com/package/@jeppech/validate-ts)
+[![npm package version](https://img.shields.io/npm/v/@jeppech/validate-ts)](https://npmjs.com/package/@jeppech/validate-ts)
 
 Small library for validating unknown data, in the shape of Objects or FormData
 
