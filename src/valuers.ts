@@ -52,17 +52,28 @@ export function timestamp(err: string = 'expected a valid timestamp') {
 /**
  * Matches the default behavior of HTML checkboxes
  */
-export function checkbox(err: string = 'expected "on" or null') {
+export function checkbox(err: string = 'expected on, off, true, false or null') {
   return (value: unknown, field: string): boolean => {
-    console.log(value);
     if (typeof value === 'undefined' || value === null) {
       return false;
     }
 
     if (typeof value !== 'string') {
+      if (typeof value === 'boolean') {
+        return value;
+      }
       throw new ValidationError(err, value, field);
     }
-    return value === 'on';
+
+    if (value == 'true' || value == 'on') {
+      return true;
+    }
+
+    if (value == 'false' || value == 'off') {
+      return false;
+    }
+
+    throw new ValidationError(err, value, field);
   };
 }
 
