@@ -53,7 +53,7 @@ export function parse_formdata<T extends SchemaProperties>(
 export function parse_object<T extends SchemaProperties>(
   data: Record<string, unknown>,
   schema: T,
-): Result<InferObject<T>, Error[]> {
+): Result<InferObject<T>, ValidationError[]> {
   const obj: Record<string, unknown> = {};
 
   try {
