@@ -1,5 +1,13 @@
 import { ValidationError } from './errors.js';
 
+export function literal(expected: unknown, err = 'invalid value') {
+  return (value: unknown, field: string) => {
+    if (value !== expected) {
+      return new ValidationError(err, value, field, [expected]);
+    }
+  };
+}
+
 export function minmax(min: number, max: number, err = 'out of range') {
   return (value: number, field: string) => {
     if (value < min || value > max) {
