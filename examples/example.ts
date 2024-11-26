@@ -1,10 +1,10 @@
 import * as v from '../src/index.ts';
 
 export function is_in_the_past(err = 'expected a timestamp in the past') {
-  return (value: Date) => {
+  return (value: Date, field: string) => {
     const now = new Date();
     if (value > now) {
-      return err;
+      return new v.ValidationError(err, value, field);
     }
   };
 }
@@ -26,7 +26,8 @@ const result = v.parse_formdata(form, userdata);
 
 if (result.is_err()) {
   // Contains a list of errors
-  console.log(result.unwrap_err());
+  const errors = result.unwrap_err();
+  errors.forEach((err) => console.log(err.field, err.message));
 } else {
   // Contains the parsed user object
   const user = result.unwrap();
