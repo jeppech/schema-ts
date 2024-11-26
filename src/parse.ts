@@ -4,6 +4,10 @@ import { ValidationError, ValidationErrors } from './errors.js';
 
 export function as<T extends Valuer>(valuer: T, ...validators: Validator<InferValue<T>>[]) {
   return (value: unknown, field: string) => {
+    if (typeof valuer !== 'function') {
+      throw new ValidationError('valuer must be a function', valuer, field);
+    }
+
     const parsed = valuer(value, field) as InferValue<T>;
 
     const validation_errors = new ValidationErrors();
@@ -29,8 +33,11 @@ export function parse_formdata<T extends SchemaProperties>(
   const obj: Record<string, unknown> = {};
 
   try {
-    for (const key of Object.keys(schema)) {
-      const valuer = schema[key];
+    for (const [key, valuer] of Object.entries(schema)) {
+      if (typeof valuer !== 'function') {
+        throw new ValidationError('valuer must be a function', valuer, key);
+      }
+
       const value = data.get(key);
 
       obj[key] = valuer(value, key);
@@ -57,8 +64,11 @@ export function parse_object<T extends SchemaProperties>(
   const obj: Record<string, unknown> = {};
 
   try {
-    for (const key in Object.keys(schema)) {
-      const valuer = schema[key];
+    for (const [key, valuer] of Object.entries(schema)) {
+      if (typeof valuer !== 'function') {
+        throw new ValidationError('valuer must be a function', valuer, key);
+      }
+
       const value = data[key];
 
       obj[key] = valuer(value, key);
