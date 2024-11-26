@@ -60,7 +60,7 @@ You can add your own `Valuers` and `Validators`, they are just simple functions.
 ## Valuer
 A `Valuer` is a function, that is passed as the first argument to the `v.as(...)` function.
 The Valuers job, is to assert, that the input value is of the type that we want, and return that type.
-If this assertion fails, it must throw an error.
+If this assertion fails, it must throw a `ValidationError`.
 
 Here's an example of a Valuer, that requires the property to be either `admin`, `user` or `anonymous`
 ```ts
@@ -68,13 +68,13 @@ const roles = ['admin', 'user', 'anonymous'] as const;
 type UserRole = typeof roles[number]
 
 export function role(err = 'expected a valid role') {
-  return (value: unknown) => {
+  return (value: unknown, field: string) => {
     if (typeof value === 'string') {
       if (roles.includes(value as UserRole)) {
         return value as UserRole;
       }
     }
-    throw new Error(err);
+    throw new ValidationError(err, value, field);
   };
 }
 
@@ -91,17 +91,17 @@ See [src/valuers.ts](src/valuers.ts) for more examples
 ## Validator
 A `Validator` is a function, that is passed as any other argument, besides the first, to the `v.as(...)` function.
 
-A Validators job is, as the name implies, to validate the input data. If a validation succeeds it must return `void`/`undefined`. If it fails, it must return a error message.
+A Validators job is, as the name implies, to validate the input data. If a validation succeeds it must return `void`/`undefined`. If it fails, it must return a ValidationError.
 
 As a Validator comes __after__ a Valuer, we can expect an exact type as input data, for the function.
 
 Here's an example of a Validator, that requires a timestamp to be in the future
 ```ts
 function in_the_future(err = 'expected a timestamp in the future') {
-  return (value: Date) => {
+  return (value: Date, field: string) => {
     const now = new Date();
     if (value < now) {
-      return err;
+      return new ValidationError(err, value, field);
     }
   };
 }
