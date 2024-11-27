@@ -1,4 +1,4 @@
-import { Some } from '@jeppech/results-ts';
+import { None, Some } from '@jeppech/results-ts';
 import { InferInstance, InferValue, Newable, Valuer } from './types.js';
 import { ValidationError } from './errors.js';
 
@@ -109,13 +109,18 @@ export function construct<T extends Newable>(newable: T, err = 'expected an inst
 
 /**
  * Mark a value as optional.
- * Any value that is undefined or null will resolve to a None value
+ * Any value that is undefined, null or an empty string, will resolve to a None value
  */
-export function optional<T extends Valuer>(maybe: T) {
+export function optional<T extends Valuer>(valuer: T) {
   return (value: unknown, field: string) => {
-    return Some(typeof value === 'undefined' || value === null ? undefined : maybe(value, field)) as InferValue<
-      T,
-      undefined
-    >;
+    if (typeof value === 'string' && value.length === 0) {
+      return None as InferValue<T, undefined>;
+    }
+
+    if (typeof value === 'undefined' || value === null) {
+      return None as InferValue<T, undefined>;
+    }
+
+    return Some(valuer(value, field)) as InferValue<T, undefined>;
   };
 }
