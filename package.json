@@ -1,6 +1,6 @@
 {
   "name": "@jeppech/validate-ts",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Validate some unknown data",
   "author": "Jeppe Christiansen",
   "license": "ISC",
