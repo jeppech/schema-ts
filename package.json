@@ -6,10 +6,10 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jeppech/validate-ts.git"
+    "url": "git+https://github.com/jeppech/schema-ts.git"
   },
   "bugs": {
-    "url": "https://github.com/jeppech/validate-ts/issues"
+    "url": "https://github.com/jeppech/schema-ts/issues"
   },
   "type": "module",
   "exports": {

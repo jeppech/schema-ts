@@ -9,7 +9,7 @@ Small library for creating schemas, that can validate and assert unknown data.
 
 ## Install
 ```sh
-pnpm add @jeppech/validate-ts
+pnpm add @jeppech/schema-ts
 ```
 
 ## Usage
