@@ -1,7 +1,7 @@
 {
-  "name": "@jeppech/validate-ts",
+  "name": "@jeppech/schema-ts",
   "version": "1.0.8",
-  "description": "Validate some unknown data",
+  "description": "Create schemas for validating unknown data",
   "author": "Jeppe Christiansen",
   "license": "ISC",
   "repository": {
@@ -32,10 +32,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "validate",
+    "schema",
     "validation",
+    "unknown",
     "data",
-    "type",
     "typescript"
   ],
   "devDependencies": {

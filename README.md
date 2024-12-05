@@ -1,7 +1,7 @@
 # Validate unknown data
-[![npm package version](https://img.shields.io/npm/v/@jeppech/validate-ts)](https://npmjs.com/package/@jeppech/validate-ts)
+[![npm package version](https://img.shields.io/npm/v/@jeppech/schema-ts)](https://npmjs.com/package/@jeppech/schema-ts)
 
-Small library for validating unknown data, in the shape of Objects or FormData
+Small library for creating schemas, that can validate and assert unknown data.
 
 > someone: Why not use valibot  
 > me: We have valibot at home...  
@@ -15,7 +15,7 @@ pnpm add @jeppech/validate-ts
 ## Usage
 
 ```ts
-import * as v from '@jeppech/validate-ts'
+import * as v from '@jeppech/schema-ts'
 
 const userdata = {
   username: v.as(v.string()),
