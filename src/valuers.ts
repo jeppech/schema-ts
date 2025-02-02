@@ -1,6 +1,6 @@
 import { None, Some } from '@jeppech/results-ts';
-import { InferInstance, InferValue, Newable, Valuer } from './types.js';
 import { ValidationError } from './errors.js';
+import { InferInstance, InferValue, Newable, Valuer } from './types.js';
 
 /**
  * Parse a string as a string.
@@ -62,14 +62,18 @@ export function checkbox(err: string = 'expected on, off, true, false or null') 
       if (typeof value === 'boolean') {
         return value;
       }
+
+      if (typeof value === 'number') {
+        return value !== 0;
+      }
       throw new ValidationError(err, value, field);
     }
 
-    if (value == 'true' || value == 'on') {
+    if (value == 'true' || value == 'on' || value == '1') {
       return true;
     }
 
-    if (value == 'false' || value == 'off') {
+    if (value == 'false' || value == 'off' || value == '0') {
       return false;
     }
 

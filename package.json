@@ -1,6 +1,6 @@
 {
   "name": "@jeppech/schema-ts",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Create schemas for validating unknown data",
   "author": "Jeppe Christiansen",
   "license": "ISC",
