@@ -130,24 +130,6 @@ export function optional<T extends Valuer>(valuer: T) {
 }
 
 /**
- * Mark a value as nullable.
- * Any value that is null, undefined or an empty string, will resolve to null.
- */
-export function nullable<T extends Valuer>(valuer: T) {
-  return (value: unknown, field: string) => {
-    if (typeof value == 'string' && value.length === 0) {
-      return null as InferValue<T, null>;
-    }
-
-    if (value === null || value === undefined) {
-      return null as InferValue<T, null>;
-    }
-
-    return valuer(value, field) as InferValue<T, null>;
-  };
-}
-
-/**
  * Cast a value to a number.
  */
 export function to_number<T extends Valuer>(valuer: T) {
