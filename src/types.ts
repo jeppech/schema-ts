@@ -19,7 +19,9 @@ export type Validator<T> = (value: T, field: string) => ValidationError | undefi
 export type InferValue<T extends Valuer, K = unknown> = T extends (val: unknown, field: string) => infer U
   ? K extends undefined
     ? Option<U>
-    : U
+    : K extends null
+      ? U | null
+      : U
   : never;
 
 export type Newable = new (...args: unknown[]) => unknown;
