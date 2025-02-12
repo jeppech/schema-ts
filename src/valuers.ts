@@ -50,7 +50,7 @@ export function timestamp(err: string = 'expected a valid timestamp') {
 }
 
 /**
- * Matches the default behavior of HTML checkboxes
+ * Matches the different behavior of HTML checkboxes, that I have seen in the wild.
  */
 export function checkbox(err: string = 'expected on, off, true, false or null') {
   return (value: unknown, field: string): boolean => {
@@ -126,5 +126,17 @@ export function optional<T extends Valuer>(valuer: T) {
     }
 
     return Some(valuer(value, field)) as InferValue<T, undefined>;
+  };
+}
+
+/**
+ * Cast a value to a number.
+ */
+export function to_number<T extends Valuer>(valuer: T) {
+  return (value: unknown, field: string) => {
+    if (typeof value === 'boolean') {
+      return value ? 1 : 0;
+    }
+    return Number(valuer(value, field));
   };
 }

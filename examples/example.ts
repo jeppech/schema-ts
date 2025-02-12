@@ -15,7 +15,7 @@ const user_schema = {
   email: v.as(v.string(), v.email()),
   created_at: v.as(v.timestamp(), is_in_the_past()),
   deleted: v.as(v.optional(v.timestamp())),
-  have_you_heard_about_our_extended_warranty: v.as(v.bool(), v.literal(false)),
+  have_you_heard_about_our_extended_warranty: v.as(v.to_number(v.bool()), v.literal(false)),
 };
 
 type User = v.InferObject<typeof user_schema>;
