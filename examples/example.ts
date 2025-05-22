@@ -1,6 +1,6 @@
 import * as v from '../src/index.ts';
 
-export function is_in_the_past(err = 'expected a timestamp in the past') {
+export function is_in_the_past(err = 'expected a timestamp in the past' as const) {
   return (value: Date, field: string) => {
     const now = new Date();
     if (value > now) {
@@ -13,6 +13,7 @@ const user_schema = {
   username: v.as(v.string()),
   age: v.as(v.number()),
   email: v.as(v.string(), v.email()),
+  ids: v.as(v.array(v.string())),
   created_at: v.as(v.timestamp(), is_in_the_past()),
   deleted: v.as(v.optional(v.timestamp())),
   this_is_nullable: v.as(v.optional(v.string())),

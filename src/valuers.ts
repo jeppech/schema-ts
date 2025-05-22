@@ -112,6 +112,25 @@ export function construct<T extends Newable>(newable: T, err = SchemaErrors.expe
 }
 
 /**
+ * Expects a value to be an array of the given valuer
+ */
+export function array<T extends Valuer>(valuer: T, err = SchemaErrors.expected_array) {
+  return (value: unknown, field: string) => {
+    if (!Array.isArray(value)) {
+      throw new ValidationError(err, value, field);
+    }
+
+    const result = [];
+
+    for (const item of value) {
+      result.push(valuer(item, field));
+    }
+
+    return result as InferValue<T>[];
+  };
+}
+
+/**
  * Mark a value as optional.
  * Any value that is undefined, null or an empty string, will resolve to a None value
  */
