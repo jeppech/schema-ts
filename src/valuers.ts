@@ -1,11 +1,11 @@
 import { None, Some } from '@jeppech/results-ts';
-import { ValidationError } from './errors.js';
+import { SchemaErrors, ValidationError } from './errors.js';
 import { InferInstance, InferValue, Newable, Valuer } from './types.js';
 
 /**
  * Parse a string as a string.
  */
-export function string(err: string = 'expected a string') {
+export function string(err = SchemaErrors.expected_string) {
   return (value: unknown, field: string): string => {
     if (typeof value !== 'string') {
       throw new ValidationError(err, value, field);
@@ -17,7 +17,7 @@ export function string(err: string = 'expected a string') {
 /**
  * Parse a string or number as a number.
  */
-export function number(err: string = 'expected a number') {
+export function number(err = SchemaErrors.expected_number) {
   return (value: unknown, field: string): number => {
     if (typeof value !== 'number') {
       if (typeof value === 'string' && value.length > 0 && !isNaN(Number(value)) && value.match(/^\d+(\.\d+)?$/)) {
@@ -33,7 +33,7 @@ export function number(err: string = 'expected a number') {
  * Parse a string or number as a timestamp.
  * Accepts any values that can be parsed by the `Date` constructor.
  */
-export function timestamp(err: string = 'expected a valid timestamp') {
+export function timestamp(err = SchemaErrors.expected_valid_timestamp) {
   return (value: unknown, field: string): Date => {
     if (typeof value !== 'number' && typeof value !== 'string') {
       throw new ValidationError(err, value, field);
@@ -52,7 +52,7 @@ export function timestamp(err: string = 'expected a valid timestamp') {
 /**
  * Matches the different behavior of HTML checkboxes, that I have seen in the wild.
  */
-export function checkbox(err: string = 'expected on, off, true, false or null') {
+export function checkbox(err = SchemaErrors.expected_truthy_or_falsy) {
   return (value: unknown, field: string): boolean => {
     if (typeof value === 'undefined' || value === null) {
       return false;
@@ -84,7 +84,7 @@ export function checkbox(err: string = 'expected on, off, true, false or null') 
 /**
  * Test if a value is a boolean, or the exact string 'true' or 'false'
  */
-export function bool(err: string = 'expected a boolean') {
+export function bool(err = SchemaErrors.expected_boolean) {
   return (value: unknown, field: string): boolean => {
     if (typeof value !== 'boolean') {
       if (typeof value === 'string' && (value === 'true' || value === 'false')) {
@@ -99,7 +99,7 @@ export function bool(err: string = 'expected a boolean') {
 /**
  * Instanciates the given class, with the value as the constructor argument.
  */
-export function construct<T extends Newable>(newable: T, err = 'expected an instance of a class') {
+export function construct<T extends Newable>(newable: T, err = SchemaErrors.expected_instance_of_a_class) {
   return (value: unknown, field: string) => {
     try {
       return new newable(value) as InferInstance<T>;
