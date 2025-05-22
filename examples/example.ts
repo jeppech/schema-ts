@@ -23,6 +23,15 @@ const user_schema = {
 type User = v.InferObject<typeof user_schema>;
 
 const form = new FormData(); // from a request, eg. `await req.formData()`
+form.append('username', 'jeppech');
+form.append('age', '35');
+form.append('email', 'der@die.das');
+form.append('ids[]', '1');
+form.append('ids[]', 'number');
+form.append('created_at', new Date().toISOString());
+form.append('deleted', new Date().toISOString());
+// form.append('this_is_nullable', 'hello');
+form.append('have_you_heard_about_our_extended_warranty', 'false');
 
 const result = v.parse_formdata(user_schema, form);
 
