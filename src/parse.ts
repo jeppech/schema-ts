@@ -48,9 +48,9 @@ export function parse_formdata<T extends SchemaProperties>(
   skip?: Array<keyof T>,
 ): Result<InferObject<T>, ValidationError[]> {
   const tmp: Record<string, unknown> = {};
-  const obj: Record<string, unknown> = {};
+  const parsed: Record<string, unknown> = {};
 
-  for (const key in fd.keys()) {
+  for (const key of fd.keys()) {
     const [match, plain_key] = key.match(fd_array_key_rx) || [];
     if (!match) {
       tmp[key] = fd.get(key);
@@ -71,7 +71,7 @@ export function parse_formdata<T extends SchemaProperties>(
         throw new ValidationError(SchemaErrors.valuer_must_be_a_function, valuer, key);
       }
 
-      obj[key] = valuer(tmp[key] || null, key);
+      parsed[key] = valuer(tmp[key] || null, key);
     }
   } catch (err: unknown) {
     if (err instanceof ValidationErrors) {
@@ -85,7 +85,7 @@ export function parse_formdata<T extends SchemaProperties>(
     return Err([new ValidationError(SchemaErrors.unknown_error, 'unknown', 'unknown', [], err)]);
   }
 
-  return Ok(obj as InferObject<T>);
+  return Ok(parsed as InferObject<T>);
 }
 
 type SuggestKeys<T extends SchemaProperties> = {
