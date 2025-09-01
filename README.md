@@ -3,8 +3,8 @@
 
 Small library for creating schemas, that can validate and assert unknown data.
 
-> someone: Why not use valibot  
-> me: We have valibot at home...  
+> someone: Why not use valibot
+> me: We have valibot at home...
 > valibot at home:
 
 ## Install
@@ -18,19 +18,19 @@ pnpm add @jeppech/schema-ts
 import * as v from '@jeppech/schema-ts'
 
 const userdata = {
-  username: v.as(v.string()),
-  age: v.as(v.number()),
-  email: v.as(v.string(), v.email()),
-  created_at: v.as(v.timestamp()),
-  deleted: v.as(v.optional(v.timestamp())),
-  have_you_heard_about_our_extended_warranty: v.as(v.bool())
+  username: v.string(),
+  age: v.number(),
+  email: v.string(v.email()),
+  created_at: v.timestamp(),
+  deleted: v.optional(v.timestamp()),
+  have_you_heard_about_our_extended_warranty: v.bool()
 }
 
 type User = v.InferObject<typeof userdata>
 /**
  * The `User` type will have the following shape, and
  * will following any changes made to the object above.
- * 
+ *
  * type User = {
  *   username: string;
  *   age: number;
@@ -38,12 +38,12 @@ type User = v.InferObject<typeof userdata>
  *   created_at: Date;
  *   deleted: Option<Date>;
  *   have_you_heard_about_our_extended_warranty: boolean;
- * } 
+ * }
  */
 
 const form = new FormData() // from a request, eg. `await req.formData()`
 
-const result = v.parse_formdata(form, userdata)
+const result = v.parse(form, userdata)
 
 if (result.is_err()) {
   // Contains a list of errors, WIP
@@ -67,20 +67,20 @@ Here's an example of a Valuer, that requires the property to be either `admin`, 
 const roles = ['admin', 'user', 'anonymous'] as const;
 type UserRole = typeof roles[number]
 
-export function role(err = 'expected a valid role') {
+export function role(...validators: v.Validator<UserRole>[]) {
   return (value: unknown, field: string) => {
     if (typeof value === 'string') {
       if (roles.includes(value as UserRole)) {
-        return value as UserRole;
+        return v.validate(value as UserRole, field, ...validators);
       }
     }
-    throw new ValidationError(err, value, field);
+    throw new v.ValidationError('expected a valid role', value, field);
   };
 }
 
 const user = {
-  name: v.as(v.string()),
-  role: v.as(v.role())
+  name: v.string(),
+  role: v.role()
 }
 
 type UserWithRole = v.InferObject<typeof user>
@@ -107,8 +107,8 @@ function in_the_future(err = 'expected a timestamp in the future') {
 }
 
 const notification = {
-  message: v.as(v.string()),
-  fire_at: v.as(v.timestamp(), in_the_future())
+  message: v.string(),
+  fire_at: v.timestamp(in_the_future())
 }
 
 type NotifyInFuture = v.InferObject<typeof notification>
