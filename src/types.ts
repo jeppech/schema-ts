@@ -34,3 +34,7 @@ export type InferInstance<T extends Newable> = T extends new (...args: unknown[]
 export type InferErrors<T extends SchemaProperties> = {
   [K in keyof T]: ValidationError[];
 };
+
+export type SuggestKeys<T extends SchemaProperties> = {
+  [K in keyof T]?: unknown;
+} & { [k: string]: unknown };

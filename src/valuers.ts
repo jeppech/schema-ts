@@ -1,6 +1,6 @@
 import { None, Option, Some } from '@jeppech/results-ts';
 import { SchemaErrors, ValidationError } from './errors.js';
-import { InferInstance, InferValue, Newable, SchemaProperties, Validator, Valuer } from './types.js';
+import { InferInstance, InferValue, Newable, SchemaProperties, SuggestKeys, Validator, Valuer } from './types.js';
 import { parse, validate } from './parse.js';
 
 /**
@@ -197,7 +197,7 @@ export function to_number<T extends Valuer>(valuer: T, ...validators: Validator<
  * Expects the value to be a schema
  */
 export function schema<T extends SchemaProperties>(schema: T) {
-  return (value: any, field: string) => {
+  return (value: FormData | SuggestKeys<T>, field: string) => {
     const result = parse(schema, value);
     if (result.is_err()) {
       throw new ValidationError(`Could not parse schema`, value, field);

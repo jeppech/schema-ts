@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from '@jeppech/results-ts';
 import { ValidationError, SchemaErrors, ValidationErrors } from './errors.js';
-import type { InferObject, InferValue, SchemaProperties, Validator, Valuer } from './types.js';
+import type { InferObject, SchemaProperties, SuggestKeys, Validator } from './types.js';
 
 /**
  * Validates a given value for a field, when the list of validators is provided.
@@ -94,10 +94,6 @@ export function parse_formdata<T extends SchemaProperties>(
 
   return Ok(parsed as InferObject<T>);
 }
-
-type SuggestKeys<T extends SchemaProperties> = {
-  [K in keyof T]?: unknown;
-} & { [k: string]: unknown };
 
 /**
  * Parses the given object using the provided schema.
