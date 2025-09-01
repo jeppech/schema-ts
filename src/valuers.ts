@@ -1,6 +1,15 @@
 import { None, Option, Some } from '@jeppech/results-ts';
 import { SchemaErrors, ValidationError } from './errors.js';
-import { InferInstance, InferValue, Newable, SchemaProperties, SuggestKeys, Validator, Valuer } from './types.js';
+import {
+  InferInstance,
+  InferObject,
+  InferValue,
+  Newable,
+  SchemaProperties,
+  SuggestKeys,
+  Validator,
+  Valuer,
+} from './types.js';
 import { parse, validate } from './parse.js';
 
 /**
@@ -196,13 +205,18 @@ export function to_number<T extends Valuer>(valuer: T, ...validators: Validator<
 /**
  * Expects the value to be a schema
  */
-export function schema<T extends SchemaProperties>(schema: T) {
-  return (value: FormData | SuggestKeys<T>, field: string) => {
-    const result = parse(schema, value);
+export function schema<T extends SchemaProperties, U extends InferObject<T>>(schema: T, ...validators: Validator<U>[]) {
+  return (value: unknown, field: string) => {
+    if (typeof value === 'undefined' || value === null) {
+      throw new ValidationError(`cannot parse empty schema`, value, field);
+    }
+
+    const result = parse(schema, value as T);
+
     if (result.is_err()) {
       throw new ValidationError(`Could not parse schema`, value, field);
     }
 
-    return result.unwrap();
+    return validate(result.unwrap() as U, field, ...validators);
   };
 }
