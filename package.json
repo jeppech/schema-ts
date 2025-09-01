@@ -1,6 +1,6 @@
 {
   "name": "@jeppech/schema-ts",
-  "version": "1.1.5",
+  "version": "1.2.0",
   "description": "Create schemas for validating unknown data",
   "author": "Jeppe Christiansen",
   "license": "ISC",
@@ -39,15 +39,15 @@
     "typescript"
   ],
   "devDependencies": {
-    "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.15.0",
-    "@typescript-eslint/eslint-plugin": "^8.16.0",
-    "@typescript-eslint/parser": "^8.16.0",
-    "eslint": "^9.15.0",
-    "prettier": "^3.3.3",
-    "typescript": "^5.7.2"
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.34.0",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "eslint": "^9.34.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@jeppech/results-ts": "^1.2.3"
+    "@jeppech/results-ts": "^1.3.1"
   }
 }

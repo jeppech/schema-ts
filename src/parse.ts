@@ -3,37 +3,44 @@ import { ValidationError, SchemaErrors, ValidationErrors } from './errors.js';
 import type { InferObject, InferValue, SchemaProperties, Validator, Valuer } from './types.js';
 
 /**
- * Define a field with a valuer and any number of optional validators.
- * Valuers can be nested, so fx. a optional field can be defined as: `v.as(v.optional(v.string()))`.
+ * Validates a given value for a field, when the list of validators is provided.
  */
-export function as<T extends Valuer>(valuer: T, ...validators: Validator<InferValue<T>>[]) {
-  return (value: unknown, field: string) => {
-    if (typeof valuer !== 'function') {
-      throw new ValidationError(SchemaErrors.valuer_must_be_a_function, valuer, field);
+export function validate<T>(value: T, field: string, ...validators: Validator<T>[]): T {
+  const validation_errors = new ValidationErrors();
+  for (const _validate of validators) {
+    const err = _validate(value, field);
+    if (err) {
+      validation_errors.errors.push(err);
     }
+  }
 
-    const parsed = valuer(value, field) as InferValue<T>;
+  if (validation_errors.errors.length) {
+    throw validation_errors;
+  }
 
-    const validation_errors = new ValidationErrors();
-    for (const validate of validators) {
-      const err = validate(parsed, field);
-      if (err) {
-        validation_errors.errors.push(err);
-      }
-    }
-
-    if (validation_errors.errors.length) {
-      throw validation_errors;
-    }
-
-    return parsed;
-  };
+  return value;
 }
 
 /**
  * Match form field names with array notation.
  */
 const fd_array_key_rx = new RegExp(/(\w+)\[(.+)?\]/);
+
+export function parse<T extends SchemaProperties>(
+  schema: T,
+  data: FormData | SuggestKeys<T>,
+  skip?: Array<keyof T>,
+): Result<InferObject<T>, ValidationError[]> {
+  if (data instanceof FormData) {
+    return parse_formdata(schema, data, skip);
+  }
+
+  if (typeof data === 'string') {
+    return parse_object(schema, JSON.parse(data), skip);
+  }
+
+  return parse_object(schema, data, skip);
+}
 
 /**
  * Parses the given FormData object using the provided schema.

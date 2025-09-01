@@ -1,4 +1,4 @@
-import { SchemaError, SchemaErrors, ValidationError } from './errors.js';
+import { SchemaErrors, ValidationError } from './errors.js';
 
 /**
  * The value must be an exact match of `expected`.

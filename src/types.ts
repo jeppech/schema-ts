@@ -13,7 +13,7 @@ export type InferObject<T extends SchemaProperties> = {
   [K in keyof T]: InferValue<T[K]>;
 } & unknown;
 
-export type Valuer = (value: unknown, field: string) => ValidationError | unknown;
+export type Valuer = (value: unknown, field: string) => unknown;
 export type Validator<T> = (value: T, field: string) => ValidationError | void;
 
 export type InferValue<T extends Valuer, K = unknown> = T extends (val: unknown, field: string) => infer U
