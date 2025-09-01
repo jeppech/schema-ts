@@ -1,23 +1,30 @@
 import * as v from '../src/index.ts';
 
-export function is_in_the_past(err = 'expected a timestamp in the past' as const) {
+export function is_in_the_past() {
   return (value: Date, field: string) => {
     const now = new Date();
     if (value > now) {
-      return new v.ValidationError(err, value, field);
+      return new v.ValidationError('expected a timestamp in the past', value, field);
     }
   };
 }
 
+const role_schema = {
+  id: v.string(),
+  name: v.string(),
+};
+
 const user_schema = {
-  username: v.as(v.string()),
-  age: v.as(v.number()),
-  email: v.as(v.string(), v.email()),
-  ids: v.as(v.array(v.string())),
-  created_at: v.as(v.timestamp(), is_in_the_past()),
-  deleted: v.as(v.optional(v.timestamp())),
-  this_is_nullable: v.as(v.optional(v.string())),
-  have_you_heard_about_our_extended_warranty: v.as(v.to_number(v.checkbox()), v.literal(false)),
+  username: v.string(),
+  age: v.number(),
+  email: v.string(v.email()),
+  ids: v.array(v.string()),
+  created_at: v.timestamp(is_in_the_past()),
+  admin: v.fallback(v.bool(), false),
+  deleted: v.optional(v.timestamp()),
+  this_is_nullable: v.nullable(v.string()),
+  have_you_heard_about_our_extended_warranty: v.to_number(v.checkbox(v.literal(false))),
+  role: v.schema(role_schema),
 };
 
 type User = v.InferObject<typeof user_schema>;
@@ -32,8 +39,9 @@ form.append('created_at', new Date().toISOString());
 form.append('deleted', new Date().toISOString());
 // form.append('this_is_nullable', 'hello');
 form.append('have_you_heard_about_our_extended_warranty', 'false');
+form.append('role', JSON.stringify({ id: 'admin', name: 'Administrator' }));
 
-const result = v.parse_formdata(user_schema, form);
+const result = v.parse(user_schema, form);
 
 if (result.is_err()) {
   // Contains a list of errors
@@ -42,5 +50,5 @@ if (result.is_err()) {
 } else {
   // Contains the parsed user object
   const user = result.unwrap();
-  console.log(user.created_at.toLocaleDateString());
+  console.log(JSON.stringify(user, null, 2));
 }
