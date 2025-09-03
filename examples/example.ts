@@ -23,6 +23,7 @@ const user_schema = {
   admin: v.fallback(v.bool(), false),
   deleted: v.optional(v.timestamp()),
   this_is_nullable: v.nullable(v.string()),
+  is_remote: v.optional(v.bool()),
   have_you_heard_about_our_extended_warranty: v.to_number(v.checkbox(v.literal(false))),
   role: v.schema(role_schema),
 };

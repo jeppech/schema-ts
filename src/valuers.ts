@@ -109,13 +109,13 @@ export function bool(...validators: Validator<unknown>[]) {
 /**
  * Instanciates the given class, with the value as the constructor argument.
  */
-export function construct<T extends Newable>(newable: T, err = SchemaErrors.expected_instance_of_a_class) {
+export function construct<T extends Newable, U extends InferInstance<T>>(newable: T, ...validators: Validator<U>[]) {
   return (value: unknown, field: string) => {
     try {
-      return new newable(value) as InferInstance<T>;
+      return validate(new newable(value) as U, field, ...validators);
     } catch (contruct_err) {
       if (contruct_err instanceof Error) {
-        throw new ValidationError(err, value, field, [], contruct_err);
+        throw new ValidationError(SchemaErrors.expected_instance_of_a_class, value, field, [], contruct_err);
       }
     }
   };
@@ -124,16 +124,16 @@ export function construct<T extends Newable>(newable: T, err = SchemaErrors.expe
 /**
  * Expects a value to be an array of the given valuer
  */
-export function array<T extends Valuer, U extends InferValue<T>>(valuer: T, err = SchemaErrors.expected_array) {
+export function array<T extends Valuer, U extends InferValue<T>>(valuer: T, ...validators: Validator<U>[]) {
   return (value: unknown, field: string): U[] => {
     if (!Array.isArray(value)) {
-      throw new ValidationError(err, value, field);
+      throw new ValidationError(SchemaErrors.expected_array, value, field);
     }
 
     const result: U[] = [];
 
     for (const item of value) {
-      result.push(valuer(item, field) as U);
+      result.push(validate(valuer(item, field) as U, field, ...validators));
     }
 
     return result;
@@ -141,10 +141,11 @@ export function array<T extends Valuer, U extends InferValue<T>>(valuer: T, err 
 }
 
 /**
- * Mark a value as optional.
- * Any value that is undefined, null or an empty string, will resolve to a None value
+ * Transform the value to an `Option`.
+ *
+ * Any value that is undefined, null or an empty string, will resolve to a `None` value
  */
-export function optional<T extends Valuer, U extends InferValue<T>>(valuer: T, ...validators: Validator<U>[]) {
+export function option<T extends Valuer, U extends InferValue<T>>(valuer: T, ...validators: Validator<U>[]) {
   return (value: unknown, field: string): Option<U> => {
     if (typeof value === 'string' && value.length === 0) {
       return None;
@@ -159,7 +160,9 @@ export function optional<T extends Valuer, U extends InferValue<T>>(valuer: T, .
 }
 
 /**
- * Set a default value, if the value is undefined or null
+ * Add a default value
+ *
+ * If the value isnull, undefined or an empty string, the default value will be returned.
  */
 export function fallback<T extends Valuer, U extends InferValue<T>>(
   valuer: T,
@@ -167,6 +170,10 @@ export function fallback<T extends Valuer, U extends InferValue<T>>(
   ...validators: Validator<U>[]
 ) {
   return (value: unknown, field: string): U => {
+    if (typeof value === 'string' && value.length === 0) {
+      return default_value;
+    }
+
     if (typeof value === 'undefined' || value === null) {
       return default_value;
     }
@@ -175,7 +182,26 @@ export function fallback<T extends Valuer, U extends InferValue<T>>(
 }
 
 /**
+ * Mark the value as optional
+ *
+ * Any value that is null, undefined or an empty string, will resolve to undefined.
+ */
+export function optional<T extends Valuer, U extends InferValue<T>>(valuer: T, ...validators: Validator<U>[]) {
+  return (value: unknown, field: string): U | undefined => {
+    if (typeof value == 'string' && value.length === 0) {
+      return undefined;
+    }
+
+    if (typeof value === 'undefined' || value === null) {
+      return undefined;
+    }
+    return validate(valuer(value, field) as U, field, ...validators);
+  };
+}
+
+/**
  * Mark a value as nullable.
+ *
  * Any value that is null, undefined or an empty string, will resolve to null.
  */
 export function nullable<T extends Valuer, U extends InferValue<T>>(valuer: T, ...validators: Validator<U>[]) {
