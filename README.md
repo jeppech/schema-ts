@@ -58,11 +58,14 @@ if (result.is_err()) {
 You can add your own `Valuers` and `Validators`, they are just simple functions.
 
 ## Valuer
-A `Valuer` is a function, that is passed as the first argument to the `v.as(...)` function.
-The Valuers job, is to assert, that the input value is of the type that we want, and return that type.
+A `Valuer` is a function, which job is to assert, that the input value is of the type that we want, and return that type.
+
 If this assertion fails, it must throw a `ValidationError`.
 
-Here's an example of a Valuer, that requires the property to be either `admin`, `user` or `anonymous`
+The built-in Valuers takes a **variadic number of Validators**, which is used to validated the returned value, if needed.
+
+Here's an example of a Valuer, that requires the property to be either `admin`, `user` or `anonymous`. This could also be made as a `Validator`, but using a `Valuer` we are returned the concrete type.
+
 ```ts
 const roles = ['admin', 'user', 'anonymous'] as const;
 type UserRole = typeof roles[number]
