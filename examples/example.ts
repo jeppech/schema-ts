@@ -18,7 +18,7 @@ const user_schema = {
   username: v.string(),
   age: v.number(),
   email: v.string(v.email()),
-  ids: v.array(v.string()),
+  ids: v.list(v.string(), v.length(1, 2)),
   created_at: v.timestamp(is_in_the_past()),
   admin: v.fallback(v.bool(), false),
   deleted: v.optional(v.timestamp()),

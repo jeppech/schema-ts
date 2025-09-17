@@ -124,7 +124,7 @@ export function construct<T extends Newable, U extends InferInstance<T>>(newable
 /**
  * Expects a value to be an array of the given valuer
  */
-export function array<T extends Valuer, U extends InferValue<T>>(valuer: T, ...validators: Validator<U>[]) {
+export function list<T extends Valuer, U extends InferValue<T>>(valuer: T, ...validators: Validator<U>[]) {
   return (value: unknown, field: string): U[] => {
     if (!Array.isArray(value)) {
       throw new ValidationError(SchemaErrors.expected_array, value, field);

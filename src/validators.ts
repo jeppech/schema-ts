@@ -26,9 +26,13 @@ export function minmax(min: number, max: number, err = SchemaErrors.out_of_range
  * The value may not be shorter than `min` or longer than `max`.
  */
 export function length(min: number, max: number, err = SchemaErrors.invalid_length) {
-  return (value: string, field: string) => {
+  return (value: string | Array<unknown>, field: string) => {
+    if (typeof value !== 'string' && !Array.isArray(value)) {
+      return new ValidationError(SchemaErrors.invalid_value, value, field, [min, max]);
+    }
+
     if (value.length < min || value.length > max) {
-      return new ValidationError(err, value, field, [min, max]);
+      return new ValidationError(SchemaErrors.invalid_length, value, field, [min, max]);
     }
   };
 }
