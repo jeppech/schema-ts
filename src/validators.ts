@@ -42,6 +42,7 @@ export function length(min: number, max: number, err = SchemaErrors.invalid_leng
  */
 export function email(err = SchemaErrors.invalid_formatted_email) {
   return (value: string, field: string) => {
+    // eslint-disable-next-line no-useless-escape
     if (!value.match(/^(?!\.)(?!.*\.\.)([a-z0-9_'+\-\.]*)[a-z0-9_'+\-]@([a-z0-9][a-z0-9\-]*\.)+[a-z]{2,}$/)) {
       return new ValidationError(err, value, field);
     }
