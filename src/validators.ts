@@ -42,7 +42,7 @@ export function length(min: number, max: number, err = SchemaErrors.invalid_leng
  */
 export function email(err = SchemaErrors.invalid_formatted_email) {
   return (value: string, field: string) => {
-    if (!value.match(/^((?!\.)[\w\-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$/)) {
+    if (!value.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
       return new ValidationError(err, value, field);
     }
   };
