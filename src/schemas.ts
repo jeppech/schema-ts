@@ -29,13 +29,13 @@ export function string(...validators: Validator<string>[]) {
  */
 export function email(err = SchemaErrors.invalid_formatted_email) {
   return (value: unknown, field: string) => {
-    const v = string()(value, field);
+    const v = string()(value, field).toLowerCase();
     // eslint-disable-next-line no-useless-escape
     if (!v.match(/^(?!\.)(?!.*\.\.)([a-z0-9_'+\-\.]*)[a-z0-9_'+\-]@([a-z0-9][a-z0-9\-]*\.)+[a-z]{2,}$/)) {
       throw new ValidationError(err, value, field);
     }
 
-    return v.toLowerCase();
+    return v;
   };
 }
 

@@ -17,7 +17,7 @@ const role_schema = {
 const user_schema = {
   username: v.string(),
   age: v.number(),
-  email: v.string(v.email()),
+  email: v.email(),
   ids: v.list(v.string(), v.length(1, 2)),
   created_at: v.timestamp(is_in_the_past()),
   admin: v.fallback(v.bool(), false),
