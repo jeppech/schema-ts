@@ -13,7 +13,7 @@ import {
 import { parse, validate } from './parse.js';
 
 /**
- * Parse a string as a string.
+ * Parse input as a string.
  */
 export function string(...validators: Validator<string>[]) {
   return (value: unknown, field: string): string => {
@@ -21,6 +21,21 @@ export function string(...validators: Validator<string>[]) {
       throw new ValidationError(SchemaErrors.expected_string, value, field);
     }
     return validate(value, field, ...validators);
+  };
+}
+
+/**
+ * Parses input as e-mail, converted to lowercase.
+ */
+export function email(err = SchemaErrors.invalid_formatted_email) {
+  return (value: unknown, field: string) => {
+    const v = string()(value, field);
+    // eslint-disable-next-line no-useless-escape
+    if (!v.match(/^(?!\.)(?!.*\.\.)([a-z0-9_'+\-\.]*)[a-z0-9_'+\-]@([a-z0-9][a-z0-9\-]*\.)+[a-z]{2,}$/)) {
+      throw new ValidationError(err, value, field);
+    }
+
+    return v.toLowerCase();
   };
 }
 

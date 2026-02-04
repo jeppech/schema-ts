@@ -36,26 +36,3 @@ export function length(min: number, max: number, err = SchemaErrors.invalid_leng
     }
   };
 }
-
-/**
- * The value must be a valid email address.
- */
-export function email(err = SchemaErrors.invalid_formatted_email) {
-  return (value: string, field: string) => {
-    // eslint-disable-next-line no-useless-escape
-    if (!value.match(/^(?!\.)(?!.*\.\.)([a-z0-9_'+\-\.]*)[a-z0-9_'+\-]@([a-z0-9][a-z0-9\-]*\.)+[a-z]{2,}$/)) {
-      return new ValidationError(err, value, field);
-    }
-  };
-}
-
-/**
- * The value must be a valid formatted imei.
- */
-export function imei(err = SchemaErrors.invalid_formatted_imei) {
-  return (value: string, field: string) => {
-    if (!value.match(/^[0-9]{2}\s?[0-9]{6}\s?[0-9]{6}\s?[0-9]{1,3}$/)) {
-      return new ValidationError(err, value, field);
-    }
-  };
-}
