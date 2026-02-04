@@ -107,17 +107,19 @@ export function bool(...validators: Validator<unknown>[]) {
 }
 
 /**
- * Instanciates the given class, with the value as the constructor argument.
+ * Expects the value to either one of the literals, defined in the `expected` array
  */
-export function construct<T extends Newable, U extends InferInstance<T>>(newable: T, ...validators: Validator<U>[]) {
+export function literal<const T>(expected: T | T[], err = SchemaErrors.invalid_value) {
+  if (!Array.isArray(expected)) {
+    expected = [expected];
+  }
+
   return (value: unknown, field: string) => {
-    try {
-      return validate(new newable(value) as U, field, ...validators);
-    } catch (contruct_err) {
-      if (contruct_err instanceof Error) {
-        throw new ValidationError(SchemaErrors.expected_instance_of_a_class, value, field, [], contruct_err);
-      }
+    if (expected.includes(value as T)) {
+      return value as T;
     }
+
+    throw new ValidationError('invalid literal value', value, field);
   };
 }
 
@@ -141,6 +143,21 @@ export function list<T extends Valuer, U extends InferValue<T>>(valuer: T, ...va
 }
 
 /**
+ * Instanciates the given class, with the value as the constructor argument.
+ */
+export function construct<T extends Newable, U extends InferInstance<T>>(newable: T, ...validators: Validator<U>[]) {
+  return (value: unknown, field: string) => {
+    try {
+      return validate(new newable(value) as U, field, ...validators);
+    } catch (contruct_err) {
+      if (contruct_err instanceof Error) {
+        throw new ValidationError(SchemaErrors.expected_instance_of_a_class, value, field, [], contruct_err);
+      }
+    }
+  };
+}
+
+/**
  * Transform the value to an `Option`.
  *
  * Any value that is undefined, null or an empty string, will resolve to a `None` value
@@ -156,28 +173,6 @@ export function option<T extends Valuer, U extends InferValue<T>>(valuer: T, ...
     }
 
     return Some(validate(valuer(value, field) as U, field, ...validators));
-  };
-}
-
-/**
- * Add a default value
- *
- * If the value isnull, undefined or an empty string, the default value will be returned.
- */
-export function fallback<T extends Valuer, U extends InferValue<T>>(
-  valuer: T,
-  default_value: U,
-  ...validators: Validator<U>[]
-) {
-  return (value: unknown, field: string): U => {
-    if (typeof value === 'string' && value.length === 0) {
-      return default_value;
-    }
-
-    if (typeof value === 'undefined' || value === null) {
-      return default_value;
-    }
-    return validate(valuer(value, field) as U, field, ...validators);
   };
 }
 
@@ -217,6 +212,28 @@ export function nullable<T extends Valuer, U extends InferValue<T>>(valuer: T, .
 }
 
 /**
+ * Add a default value
+ *
+ * If the value isnull, undefined or an empty string, the default value will be returned.
+ */
+export function fallback<T extends Valuer, U extends InferValue<T>>(
+  valuer: T,
+  default_value: U,
+  ...validators: Validator<U>[]
+) {
+  return (value: unknown, field: string): U => {
+    if (typeof value === 'string' && value.length === 0) {
+      return default_value;
+    }
+
+    if (typeof value === 'undefined' || value === null) {
+      return default_value;
+    }
+    return validate(valuer(value, field) as U, field, ...validators);
+  };
+}
+
+/**
  * Cast a value to a number.
  */
 export function to_number<T extends Valuer>(valuer: T, ...validators: Validator<number>[]) {
@@ -225,6 +242,12 @@ export function to_number<T extends Valuer>(valuer: T, ...validators: Validator<
       return value ? 1 : 0;
     }
     return validate(Number(valuer(value, field)), field, ...validators);
+  };
+}
+
+export function to_lowercase(...validators: Validator<string>[]) {
+  return (value: string, field: string) => {
+    return validate(value.toLowerCase(), field, ...validators);
   };
 }
 

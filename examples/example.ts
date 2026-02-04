@@ -24,8 +24,9 @@ const user_schema = {
   deleted: v.optional(v.timestamp()),
   this_is_nullable: v.nullable(v.string()),
   is_remote: v.optional(v.bool()),
-  have_you_heard_about_our_extended_warranty: v.to_number(v.checkbox(v.literal(false))),
+  have_you_heard_about_our_extended_warranty: v.to_number(v.checkbox(v.exactly(false))),
   role: v.schema(role_schema),
+  roles: v.literal(['admin', 'user']),
 };
 
 type User = v.InferObject<typeof user_schema>;

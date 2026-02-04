@@ -3,7 +3,7 @@ import { SchemaErrors, ValidationError } from './errors.js';
 /**
  * The value must be an exact match of `expected`.
  */
-export function literal(expected: unknown, err = SchemaErrors.invalid_value) {
+export function exactly(expected: unknown, err = SchemaErrors.invalid_value) {
   return (value: unknown, field: string) => {
     if (value !== expected) {
       return new ValidationError(err, value, field, [expected]);
@@ -54,7 +54,7 @@ export function email(err = SchemaErrors.invalid_formatted_email) {
  */
 export function imei(err = SchemaErrors.invalid_formatted_imei) {
   return (value: string, field: string) => {
-    if (!value.match(/^[0-9]{2}s?[0-9]{6}s?[0-9]{6}s?[0-9]{1,3}$/)) {
+    if (!value.match(/^[0-9]{2}\s?[0-9]{6}\s?[0-9]{6}\s?[0-9]{1,3}$/)) {
       return new ValidationError(err, value, field);
     }
   };
