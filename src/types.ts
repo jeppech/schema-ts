@@ -24,11 +24,3 @@ export type InferObject<T extends SchemaProperties | Schema> =
 export type InferError<T> = T extends (value: infer P, field: string) => ValidationError<infer U> | undefined
   ? U
   : never;
-
-export type InferErrors<T extends SchemaProperties> = {
-  [K in keyof T]: ValidationError[];
-};
-
-export type SuggestKeys<T extends SchemaProperties> = {
-  [K in keyof T]?: unknown;
-} & { [k: string]: unknown };

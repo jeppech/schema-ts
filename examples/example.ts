@@ -9,10 +9,10 @@ export function is_in_the_past() {
   };
 }
 
-const role_schema = {
+const role_schema = v.object({
   id: v.string(),
   name: v.string(),
-};
+});
 
 const user_schema = v.object({
   username: v.string(),
@@ -25,7 +25,7 @@ const user_schema = v.object({
   this_is_nullable: v.nullable(v.string()),
   is_remote: v.optional(v.bool()),
   have_you_heard_about_our_extended_warranty: v.to_number(v.checkbox(v.exactly(false))),
-  role: v.object(role_schema),
+  role: role_schema,
   roles: v.literal(['admin', 'user']),
 });
 
