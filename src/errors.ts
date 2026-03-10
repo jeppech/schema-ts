@@ -3,7 +3,6 @@ export const SchemaErrors = {
   out_of_range: 'out_of_range',
   invalid_length: 'invalid_length',
   invalid_formatted_email: 'invalid_formatted_email',
-  invalid_formatted_imei: 'invalid_formatted_imei',
   unknown_error: 'unknown_error',
   expected_string: 'expected_string',
   expected_number: 'expected_number',
@@ -12,6 +11,8 @@ export const SchemaErrors = {
   expected_boolean: 'expected_boolean',
   expected_instance_of_a_class: 'expected_instance_of_a_class',
   expected_array: 'expected_array',
+  expected_object: 'expected_object',
+  invalid_schema: 'invalid_schema',
   valuer_must_be_a_function: 'valuer_must_be_a_function',
 } as const;
 
