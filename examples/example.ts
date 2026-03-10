@@ -14,7 +14,7 @@ const role_schema = {
   name: v.string(),
 };
 
-const user_schema = {
+const user_schema = v.object({
   username: v.string(),
   age: v.number(),
   email: v.email(),
@@ -25,11 +25,36 @@ const user_schema = {
   this_is_nullable: v.nullable(v.string()),
   is_remote: v.optional(v.bool()),
   have_you_heard_about_our_extended_warranty: v.to_number(v.checkbox(v.exactly(false))),
-  role: v.schema(role_schema),
+  role: v.object(role_schema),
   roles: v.literal(['admin', 'user']),
-};
+});
 
 type User = v.InferObject<typeof user_schema>;
+
+console.log(user_schema);
+
+const json_data = {
+  username: 'jeppech',
+  age: 35,
+  email: 'der@die.das',
+  ids: ['1', 'number'],
+  created_at: new Date().toISOString(),
+  deleted: new Date().toISOString(),
+  role: {
+    id: 'admin',
+    name: 'Jeppe',
+  },
+  roles: 'user',
+};
+
+const json_result = v.parse(user_schema, json_data);
+
+if (json_result.is_err()) {
+  const errors = json_result.unwrap_err();
+  errors.forEach((err) => console.log(err.field, err.message));
+} else {
+  console.log(json_result.unwrap());
+}
 
 const form = new FormData(); // from a request, eg. `await req.formData()`
 form.append('username', 'jeppech');
@@ -42,6 +67,7 @@ form.append('deleted', new Date().toISOString());
 // form.append('this_is_nullable', 'hello');
 form.append('have_you_heard_about_our_extended_warranty', 'false');
 form.append('role', JSON.stringify({ id: 'admin', name: 'Administrator' }));
+form.append('roles', 'admin');
 
 const result = v.parse(user_schema, form);
 
@@ -51,6 +77,5 @@ if (result.is_err()) {
   errors.forEach((err) => console.log(err.field, err.message));
 } else {
   // Contains the parsed user object
-  const user = result.unwrap();
-  console.log(JSON.stringify(user, null, 2));
+  console.log(result.unwrap());
 }

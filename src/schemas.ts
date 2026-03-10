@@ -1,286 +1,231 @@
-import { None, Option, Some } from '@jeppech/results-ts';
-import { SchemaErrors, ValidationError } from './errors.js';
-import {
-  InferInstance,
-  InferObject,
-  InferValue,
-  Newable,
-  SchemaProperties,
-  SuggestKeys,
-  Validator,
-  Valuer,
-} from './types.js';
-import { parse, validate } from './parse.js';
+import { SchemaErrors } from './errors.js';
+import { schema, sync_validate, validated } from './internal.js';
+import type { SchemaProperties, Validator } from './types.js';
+import { StandardSchemaV1 } from './standard.js';
+
+export type { Schema } from './internal.js';
 
 /**
  * Parse input as a string.
  */
-export function string(...validators: Validator<string>[]) {
-  return (value: unknown, field: string): string => {
+export function string(...validators: Validator<string>[]): StandardSchemaV1<unknown, string> {
+  return schema((value) => {
     if (typeof value !== 'string') {
-      throw new ValidationError(SchemaErrors.expected_string, value, field);
+      return { issues: [{ message: SchemaErrors.expected_string }] };
     }
-    return validate(value, field, ...validators);
-  };
+    return validated(value, validators);
+  });
 }
 
 /**
  * Parses input as e-mail, converted to lowercase.
  */
-export function email(err = SchemaErrors.invalid_formatted_email) {
-  return (value: unknown, field: string) => {
-    const v = string()(value, field).toLowerCase();
-    // eslint-disable-next-line no-useless-escape
-    if (!v.match(/^(?!\.)(?!.*\.\.)([a-z0-9_'+\-\.]*)[a-z0-9_'+\-]@([a-z0-9][a-z0-9\-]*\.)+[a-z]{2,}$/)) {
-      throw new ValidationError(err, value, field);
+export function email(...validators: Validator<string>[]): StandardSchemaV1<unknown, string> {
+  // eslint-disable-next-line no-useless-escape
+  const email_rx = /^(?!\.)(?!.*\.\.)([a-z0-9_'+\-\.]*)[a-z0-9_'+\-]@([a-z0-9][a-z0-9\-]*\.)+[a-z]{2,}$/;
+
+  return schema((value) => {
+    if (typeof value !== 'string') {
+      return { issues: [{ message: SchemaErrors.expected_string }] };
     }
 
-    return v;
-  };
+    const lower = value.toLowerCase();
+
+    if (!lower.match(email_rx)) {
+      return { issues: [{ message: SchemaErrors.invalid_formatted_email }] };
+    }
+
+    return validated(lower, validators);
+  });
 }
 
 /**
  * Parse a string or number as a number.
  */
-export function number(...validators: Validator<number>[]) {
-  return (value: unknown, field: string): number => {
-    if (typeof value !== 'number') {
-      if (typeof value === 'string' && value.length > 0 && !isNaN(Number(value)) && value.match(/^\d+(\.\d+)?$/)) {
-        return validate(Number(value), field, ...validators);
-      }
-      throw new ValidationError(SchemaErrors.expected_number, value, field);
+export function number(...validators: Validator<number>[]): StandardSchemaV1<unknown, number> {
+  return schema((value) => {
+    if (typeof value === 'number') {
+      return validated(value, validators);
     }
-    return validate(value, field, ...validators);
-  };
+
+    if (typeof value === 'string' && value.length > 0 && !isNaN(Number(value)) && value.match(/^\d+(\.\d+)?$/)) {
+      return validated(Number(value), validators);
+    }
+
+    return { issues: [{ message: SchemaErrors.expected_number }] };
+  });
 }
 
 /**
  * Parse a string or number as a timestamp.
  * Accepts any values that can be parsed by the `Date` constructor.
  */
-export function timestamp(...validators: Validator<Date>[]) {
-  return (value: unknown, field: string): Date => {
+export function timestamp(...validators: Validator<Date>[]): StandardSchemaV1<unknown, Date> {
+  return schema((value) => {
     if (typeof value !== 'number' && typeof value !== 'string') {
-      throw new ValidationError(SchemaErrors.expected_valid_timestamp, value, field);
+      return { issues: [{ message: SchemaErrors.expected_valid_timestamp }] };
     }
 
     const ts = new Date(value);
 
     if (isNaN(ts.valueOf())) {
-      throw new ValidationError(SchemaErrors.expected_valid_timestamp, value, field);
+      return { issues: [{ message: SchemaErrors.expected_valid_timestamp }] };
     }
 
-    return validate(ts, field, ...validators);
-  };
+    return validated(ts, validators);
+  });
 }
 
 /**
  * Matches the different behavior of HTML checkboxes, that I have seen in the wild.
  */
-export function checkbox(...validators: Validator<unknown>[]) {
-  return (value: unknown, field: string): boolean => {
+export function checkbox(...validators: Validator<boolean>[]): StandardSchemaV1<unknown, boolean> {
+  return schema((value) => {
     if (typeof value === 'undefined' || value === null) {
-      return validate(false, field, ...validators);
+      return validated(false, validators);
     }
 
-    if (typeof value !== 'string') {
-      if (typeof value === 'boolean') {
-        return validate(value, field, ...validators);
+    if (typeof value === 'boolean') {
+      return validated(value, validators);
+    }
+
+    if (typeof value === 'number') {
+      return validated(value !== 0, validators);
+    }
+
+    if (typeof value === 'string') {
+      if (value == 'true' || value == 'on' || value == '1') {
+        return validated(true, validators);
       }
 
-      if (typeof value === 'number') {
-        return validate(value !== 0, field, ...validators);
+      if (value == 'false' || value == 'off' || value == '0') {
+        return validated(false, validators);
       }
-      throw new ValidationError(SchemaErrors.expected_truthy_or_falsy, value, field);
     }
 
-    if (value == 'true' || value == 'on' || value == '1') {
-      return validate(true, field, ...validators);
-    }
-
-    if (value == 'false' || value == 'off' || value == '0') {
-      return validate(false, field, ...validators);
-    }
-
-    throw new ValidationError(SchemaErrors.expected_truthy_or_falsy, value, field);
-  };
+    return { issues: [{ message: SchemaErrors.expected_truthy_or_falsy }] };
+  });
 }
 
 /**
  * Test if a value is a boolean, or the exact string 'true' or 'false'
  */
-export function bool(...validators: Validator<unknown>[]) {
-  return (value: unknown, field: string): boolean => {
-    if (typeof value !== 'boolean') {
-      if (typeof value === 'string' && (value === 'true' || value === 'false')) {
-        return validate(value === 'true', field, ...validators);
-      }
-      throw new ValidationError(SchemaErrors.expected_boolean, value, field);
-    }
-    return validate(value, field, ...validators);
-  };
-}
-
-/**
- * Expects the value to either one of the literals, defined in the `expected` array
- */
-export function literal<const T>(expected: T | T[], err = SchemaErrors.invalid_value) {
-  if (!Array.isArray(expected)) {
-    expected = [expected];
-  }
-
-  return (value: unknown, field: string) => {
-    if (expected.includes(value as T)) {
-      return value as T;
-    }
-
-    throw new ValidationError('invalid literal value', value, field);
-  };
-}
-
-/**
- * Expects a value to be an array of the given valuer
- */
-export function list<T extends Valuer, U extends InferValue<T>>(valuer: T, ...validators: Validator<U>[]) {
-  return (value: unknown, field: string): U[] => {
-    if (!Array.isArray(value)) {
-      throw new ValidationError(SchemaErrors.expected_array, value, field);
-    }
-
-    const result: U[] = [];
-
-    for (const item of value) {
-      result.push(validate(valuer(item, field) as U, field, ...validators));
-    }
-
-    return result;
-  };
-}
-
-/**
- * Instanciates the given class, with the value as the constructor argument.
- */
-export function construct<T extends Newable, U extends InferInstance<T>>(newable: T, ...validators: Validator<U>[]) {
-  return (value: unknown, field: string) => {
-    try {
-      return validate(new newable(value) as U, field, ...validators);
-    } catch (contruct_err) {
-      if (contruct_err instanceof Error) {
-        throw new ValidationError(SchemaErrors.expected_instance_of_a_class, value, field, [], contruct_err);
-      }
-    }
-  };
-}
-
-/**
- * Transform the value to an `Option`.
- *
- * Any value that is undefined, null or an empty string, will resolve to a `None` value
- */
-export function option<T extends Valuer, U extends InferValue<T>>(valuer: T, ...validators: Validator<U>[]) {
-  return (value: unknown, field: string): Option<U> => {
-    if (typeof value === 'string' && value.length === 0) {
-      return None;
-    }
-
-    if (typeof value === 'undefined' || value === null) {
-      return None;
-    }
-
-    return Some(validate(valuer(value, field) as U, field, ...validators));
-  };
-}
-
-/**
- * Mark the value as optional
- *
- * Any value that is null, undefined or an empty string, will resolve to undefined.
- */
-export function optional<T extends Valuer, U extends InferValue<T>>(valuer: T, ...validators: Validator<U>[]) {
-  return (value: unknown, field: string): U | undefined => {
-    if (typeof value == 'string' && value.length === 0) {
-      return undefined;
-    }
-
-    if (typeof value === 'undefined' || value === null) {
-      return undefined;
-    }
-    return validate(valuer(value, field) as U, field, ...validators);
-  };
-}
-
-/**
- * Mark a value as nullable.
- *
- * Any value that is null, undefined or an empty string, will resolve to null.
- */
-export function nullable<T extends Valuer, U extends InferValue<T>>(valuer: T, ...validators: Validator<U>[]) {
-  return (value: unknown, field: string): U | null => {
-    if (typeof value == 'string' && value.length === 0) {
-      return null;
-    }
-    if (value === null || value === undefined) {
-      return null;
-    }
-    return validate(valuer(value, field) as U, field, ...validators);
-  };
-}
-
-/**
- * Add a default value
- *
- * If the value isnull, undefined or an empty string, the default value will be returned.
- */
-export function fallback<T extends Valuer, U extends InferValue<T>>(
-  valuer: T,
-  default_value: U,
-  ...validators: Validator<U>[]
-) {
-  return (value: unknown, field: string): U => {
-    if (typeof value === 'string' && value.length === 0) {
-      return default_value;
-    }
-
-    if (typeof value === 'undefined' || value === null) {
-      return default_value;
-    }
-    return validate(valuer(value, field) as U, field, ...validators);
-  };
-}
-
-/**
- * Cast a value to a number.
- */
-export function to_number<T extends Valuer>(valuer: T, ...validators: Validator<number>[]) {
-  return (value: unknown, field: string) => {
+export function bool(...validators: Validator<boolean>[]): StandardSchemaV1<unknown, boolean> {
+  return schema((value) => {
     if (typeof value === 'boolean') {
-      return value ? 1 : 0;
+      return validated(value, validators);
     }
-    return validate(Number(valuer(value, field)), field, ...validators);
-  };
-}
 
-export function to_lowercase(...validators: Validator<string>[]) {
-  return (value: string, field: string) => {
-    return validate(value.toLowerCase(), field, ...validators);
-  };
+    if (typeof value === 'string' && (value === 'true' || value === 'false')) {
+      return validated(value === 'true', validators);
+    }
+
+    return { issues: [{ message: SchemaErrors.expected_boolean }] };
+  });
 }
 
 /**
- * Expects the value to be a schema
+ * Expects the value to be one of the literals defined in the `expected` array.
  */
-export function schema<T extends SchemaProperties, U extends InferObject<T>>(schema: T, ...validators: Validator<U>[]) {
-  return (value: unknown, field: string) => {
+export function literal<const T>(expected: T | T[], err = SchemaErrors.invalid_value): StandardSchemaV1<unknown, T> {
+  const expected_arr = Array.isArray(expected) ? expected : [expected];
+
+  return schema((value): StandardSchemaV1.Result<T> => {
+    if (expected_arr.includes(value as T)) {
+      return { value: value as T };
+    }
+
+    return { issues: [{ message: err }] };
+  });
+}
+
+/**
+ * Expects a value to be an array where each item matches the given schema.
+ */
+export function list<T>(
+  item_schema: StandardSchemaV1<unknown, T>,
+  ...validators: Validator<T[]>[]
+): StandardSchemaV1<unknown, T[]> {
+  return schema((value) => {
+    if (!Array.isArray(value)) {
+      return { issues: [{ message: SchemaErrors.expected_array }] };
+    }
+
+    const result: T[] = [];
+    const issues: StandardSchemaV1.Issue[] = [];
+
+    for (let i = 0; i < value.length; i++) {
+      const item_result = sync_validate(item_schema, value[i]);
+
+      if ('issues' in item_result && item_result.issues) {
+        for (const issue of item_result.issues) {
+          issues.push({
+            message: issue.message,
+            path: [i, ...(issue.path ?? [])],
+          });
+        }
+      } else {
+        result.push(item_result.value);
+      }
+    }
+
+    if (issues.length > 0) {
+      return { issues };
+    }
+
+    return validated(result, validators);
+  });
+}
+
+/**
+ * Expects the value to be an object matching the given schema properties.
+ */
+export function object<T extends SchemaProperties>(
+  struct: T,
+): StandardSchemaV1<Record<string, unknown>, { [K in keyof T]: StandardSchemaV1.InferOutput<T[K]> }> {
+  type Output = { [K in keyof T]: StandardSchemaV1.InferOutput<T[K]> };
+
+  return schema((value) => {
     if (typeof value === 'undefined' || value === null) {
-      throw new ValidationError(`cannot parse empty schema`, value, field);
+      return { issues: [{ message: SchemaErrors.expected_object }] };
     }
 
-    const result = parse(schema, value as T);
-
-    if (result.is_err()) {
-      throw new ValidationError(`Could not parse schema`, value, field);
+    if (typeof value === 'string') {
+      try {
+        value = JSON.parse(value);
+      } catch {
+        return { issues: [{ message: SchemaErrors.expected_object }] };
+      }
     }
 
-    return validate(result.unwrap() as U, field, ...validators);
-  };
+    if (typeof value !== 'object') {
+      return { issues: [{ message: SchemaErrors.expected_object }] };
+    }
+
+    const obj = value as Record<string, unknown>;
+    const parsed: Record<string, unknown> = {};
+    const issues: StandardSchemaV1.Issue[] = [];
+
+    for (const key in struct) {
+      const field_schema = struct[key];
+      const result = sync_validate(field_schema, obj[key]);
+
+      if ('issues' in result && result.issues) {
+        for (const issue of result.issues) {
+          issues.push({
+            message: issue.message,
+            path: [key, ...(issue.path ?? [])],
+          });
+        }
+      } else {
+        parsed[key] = result.value;
+      }
+    }
+
+    if (issues.length > 0) {
+      return { issues };
+    }
+
+    return { value: parsed as Output };
+  }) as StandardSchemaV1<Record<string, unknown>, Output>;
 }

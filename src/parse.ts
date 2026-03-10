@@ -1,24 +1,18 @@
 import { Err, Ok, type Result } from '@jeppech/results-ts';
-import { ValidationError, SchemaErrors, ValidationErrors } from './errors.js';
-import type { InferObject, SchemaProperties, SuggestKeys, Validator } from './types.js';
+import { ValidationError } from './errors.js';
+import type { InferObject, SchemaProperties, SuggestKeys } from './types.js';
+import type { StandardSchemaV1 } from './standard.js';
+import type { Schema } from './internal.js';
 
 /**
- * Validates a given value for a field, when the list of validators is provided.
+ * Convert StandardSchemaV1 issues into ValidationError[].
  */
-export function validate<T>(value: T, field: string, ...validators: Validator<T>[]): T {
-  const validation_errors = new ValidationErrors();
-  for (const _validate of validators) {
-    const err = _validate(value, field);
-    if (err) {
-      validation_errors.errors.push(err);
-    }
-  }
-
-  if (validation_errors.errors.length) {
-    throw validation_errors;
-  }
-
-  return value;
+function issues_to_errors(issues: ReadonlyArray<StandardSchemaV1.Issue>, field: string): ValidationError[] {
+  return issues.map((issue) => {
+    const path = issue.path ? issue.path.map((p) => (typeof p === 'object' ? p.key : p)).join('.') : '';
+    const full_field = path ? `${field}.${path}` : field;
+    return new ValidationError(issue.message, undefined, full_field);
+  });
 }
 
 /**
@@ -26,77 +20,146 @@ export function validate<T>(value: T, field: string, ...validators: Validator<T>
  */
 const fd_array_key_rx = new RegExp(/(\w+)\[(.+)?\]/);
 
+/**
+ * Parse data using a schema. Accepts either:
+ * - A `Schema` returned by `object()` (StandardSchemaV1 object)
+ * - A `SchemaProperties` record (plain object with Schema values)
+ */
+export function parse<Output>(
+  schema: Schema<unknown, Output>,
+  data: FormData | Record<string, unknown>,
+): Result<Output, ValidationError[]>;
 export function parse<T extends SchemaProperties>(
   schema: T,
   data: FormData | SuggestKeys<T>,
   skip?: Array<keyof T>,
-): Result<InferObject<T>, ValidationError[]> {
+): Result<InferObject<T>, ValidationError[]>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function parse(schema: any, data: any, skip?: any): Result<unknown, ValidationError[]> {
+  if (is_root_schema(schema)) {
+    return parse_schema(schema, data as FormData | Record<string, unknown>);
+  }
+
+  const props = schema as SchemaProperties;
+
   if (data instanceof FormData) {
-    return parse_formdata(schema, data, skip);
+    return parse_formdata(props, data, skip);
   }
 
   if (typeof data === 'string') {
-    return parse_object(schema, JSON.parse(data), skip);
+    return parse_object(props, JSON.parse(data), skip);
   }
 
-  return parse_object(schema, data, skip);
+  return parse_object(props, data as Record<string, unknown>, skip);
 }
 
 /**
- * Parses the given FormData object using the provided schema.
+ * Check if the argument is a Schema object (vs a plain SchemaProperties record).
+ */
+function is_root_schema(s: SchemaProperties | Schema): s is Schema {
+  return typeof s === 'object' && '~standard' in s;
+}
+
+/**
+ * Parse data using a root Schema object.
+ * Handles FormData by extracting it into a plain object first.
+ */
+function parse_schema<Output>(
+  schema: Schema<unknown, Output>,
+  data: FormData | Record<string, unknown>,
+): Result<Output, ValidationError[]> {
+  let obj: Record<string, unknown>;
+
+  if (data instanceof FormData) {
+    obj = formdata_to_object(data);
+  } else if (typeof data === 'string') {
+    obj = JSON.parse(data);
+  } else {
+    obj = data;
+  }
+
+  const result = schema['~standard'].validate(obj) as StandardSchemaV1.Result<Output>;
+
+  if ('issues' in result && result.issues) {
+    return Err(issues_to_errors(result.issues, ''));
+  }
+
+  return Ok(result.value);
+}
+
+/**
+ * Extract FormData into a plain object, handling array notation.
+ */
+function formdata_to_object(fd: FormData): Record<string, unknown> {
+  const obj: Record<string, unknown> = {};
+
+  for (const key of fd.keys()) {
+    const [match, plain_key] = key.match(fd_array_key_rx) || [];
+    if (!match) {
+      obj[key] = fd.get(key);
+    } else {
+      obj[plain_key] = fd.getAll(key);
+    }
+  }
+
+  return obj;
+}
+
+/**
+ * Validate a single field using its Schema.
+ */
+function validate_field(
+  field_schema: Schema,
+  value: unknown,
+  key: string,
+): { parsed: unknown; errors?: undefined } | { parsed?: undefined; errors: ValidationError[] } {
+  const result = field_schema['~standard'].validate(value) as StandardSchemaV1.Result<unknown>;
+
+  if ('issues' in result && result.issues) {
+    return { errors: issues_to_errors(result.issues, key) };
+  }
+
+  return { parsed: result.value };
+}
+
+/**
+ * Parses the given FormData object using the provided schema properties.
  *
  * A list of fields to skip can be provided. This is useful if a schema is used for creating an object,
  * that has not been given an `id` yet, and the `id` is generated by the server.
  */
-
 export function parse_formdata<T extends SchemaProperties>(
   schema: T,
   fd: FormData,
   skip?: Array<keyof T>,
 ): Result<InferObject<T>, ValidationError[]> {
-  const tmp: Record<string, unknown> = {};
+  const tmp = formdata_to_object(fd);
   const parsed: Record<string, unknown> = {};
+  const errors: ValidationError[] = [];
 
-  for (const key of fd.keys()) {
-    const [match, plain_key] = key.match(fd_array_key_rx) || [];
-    if (!match) {
-      tmp[key] = fd.get(key);
+  for (const key in schema) {
+    if (skip && skip.includes(key)) {
+      continue;
+    }
+
+    const result = validate_field(schema[key], tmp[key] ?? null, key);
+
+    if (result.errors) {
+      errors.push(...result.errors);
     } else {
-      tmp[plain_key] = fd.getAll(key);
+      parsed[key] = result.parsed;
     }
   }
 
-  try {
-    for (const key in schema) {
-      if (skip && skip.includes(key)) {
-        continue;
-      }
-
-      const valuer = schema[key];
-
-      if (typeof valuer !== 'function') {
-        throw new ValidationError(SchemaErrors.valuer_must_be_a_function, valuer, key);
-      }
-
-      parsed[key] = valuer(tmp[key] || null, key);
-    }
-  } catch (err: unknown) {
-    if (err instanceof ValidationErrors) {
-      return Err(err.errors);
-    }
-
-    if (err instanceof ValidationError) {
-      return Err([err]);
-    }
-
-    return Err([new ValidationError(SchemaErrors.unknown_error, 'unknown', 'unknown', [], err)]);
+  if (errors.length > 0) {
+    return Err(errors);
   }
 
   return Ok(parsed as InferObject<T>);
 }
 
 /**
- * Parses the given object using the provided schema.
+ * Parses the given object using the provided schema properties.
  *
  * A list of fields to skip can be provided. This is useful if a schema is used for creating an object,
  * that has not been given an `id` yet, and the `id` is generated by the server.
@@ -107,33 +170,24 @@ export function parse_object<T extends SchemaProperties>(
   skip?: Array<keyof T>,
 ): Result<InferObject<T>, ValidationError[]> {
   const obj: Record<string, unknown> = {};
+  const errors: ValidationError[] = [];
 
-  try {
-    for (const key in schema) {
-      if (skip && skip.includes(key)) {
-        continue;
-      }
-
-      const valuer = schema[key];
-
-      if (typeof valuer !== 'function') {
-        throw new ValidationError(SchemaErrors.valuer_must_be_a_function, valuer, key);
-      }
-
-      const value = data[key];
-
-      obj[key] = valuer(value, key);
-    }
-  } catch (err: unknown) {
-    if (err instanceof ValidationErrors) {
-      return Err(err.errors);
+  for (const key in schema) {
+    if (skip && skip.includes(key)) {
+      continue;
     }
 
-    if (err instanceof ValidationError) {
-      return Err([err]);
-    }
+    const result = validate_field(schema[key], data[key], key);
 
-    return Err([new ValidationError(SchemaErrors.unknown_error, 'unknown', 'unknown', [], err)]);
+    if (result.errors) {
+      errors.push(...result.errors);
+    } else {
+      obj[key] = result.parsed;
+    }
+  }
+
+  if (errors.length > 0) {
+    return Err(errors);
   }
 
   return Ok(obj as InferObject<T>);
