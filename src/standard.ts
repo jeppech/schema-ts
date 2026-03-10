@@ -4,7 +4,8 @@ export interface StandardSchemaV1<Input = unknown, Output = Input> {
   readonly '~standard': StandardSchemaV1.Props<Input, Output>;
 }
 
-export declare namespace StandardSchemaV1 {
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace StandardSchemaV1 {
   /** The Standard Schema properties interface. */
   export interface Props<Input = unknown, Output = Input> {
     /** The version number of the standard. */

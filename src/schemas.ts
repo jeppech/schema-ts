@@ -1,7 +1,7 @@
 import { SchemaErrors } from './errors.js';
 import { schema, sync_validate, validated } from './internal.js';
 import type { SchemaProperties, Validator } from './types.js';
-import { StandardSchemaV1 } from './standard.js';
+import type { StandardSchemaV1 } from './standard.js';
 
 export type { Schema } from './internal.js';
 

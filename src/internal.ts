@@ -1,5 +1,5 @@
 import type { Validator } from './types.js';
-import { StandardSchemaV1 } from './standard.js';
+import type { StandardSchemaV1 } from './standard.js';
 
 const vendor = '@jeppech/schema-ts';
 
