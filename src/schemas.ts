@@ -199,7 +199,19 @@ export function object<T extends SchemaProperties>(
   type Output = { [K in keyof T]: StandardSchemaV1.InferOutput<T[K]> };
 
   return schema((value) => {
-    if (typeof value === 'undefined' || value === null || typeof value !== 'object') {
+    if (typeof value === 'undefined' || value === null) {
+      return { issues: [{ message: SchemaErrors.expected_object }] };
+    }
+
+    if (typeof value === 'string') {
+      try {
+        value = JSON.parse(value);
+      } catch {
+        return { issues: [{ message: SchemaErrors.expected_object }] };
+      }
+    }
+
+    if (typeof value !== 'object') {
       return { issues: [{ message: SchemaErrors.expected_object }] };
     }
 
