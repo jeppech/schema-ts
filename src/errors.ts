@@ -49,8 +49,3 @@ export class ValidationError<T extends SchemaError = SchemaError> extends Error 
     this.name = 'ValidationError';
   }
 }
-
-export class ValidationErrors {
-  public errors: ValidationError[] = [];
-  constructor() {}
-}

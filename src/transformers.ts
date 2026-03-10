@@ -93,7 +93,13 @@ export function to_number(s: Schema, ...validators: Validator<number>[]): Schema
       return { issues: result.issues };
     }
 
-    return validated(Number(result.value), validators);
+    const num = Number(result.value);
+
+    if (isNaN(num) || !isFinite(num)) {
+      return { issues: [{ message: SchemaErrors.expected_number }] };
+    }
+
+    return validated(num, validators);
   });
 }
 

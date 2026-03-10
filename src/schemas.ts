@@ -17,13 +17,13 @@ export function string(...validators: Validator<string>[]): StandardSchemaV1<unk
   });
 }
 
+// eslint-disable-next-line no-useless-escape
+const email_rx = /^(?!\.)(?!.*\.\.)([a-z0-9_'+\-\.]*)[a-z0-9_'+\-]@([a-z0-9][a-z0-9\-]*\.)+[a-z]{2,}$/;
+
 /**
  * Parses input as e-mail, converted to lowercase.
  */
 export function email(...validators: Validator<string>[]): StandardSchemaV1<unknown, string> {
-  // eslint-disable-next-line no-useless-escape
-  const email_rx = /^(?!\.)(?!.*\.\.)([a-z0-9_'+\-\.]*)[a-z0-9_'+\-]@([a-z0-9][a-z0-9\-]*\.)+[a-z]{2,}$/;
-
   return schema((value) => {
     if (typeof value !== 'string') {
       return { issues: [{ message: SchemaErrors.expected_string }] };
@@ -45,11 +45,17 @@ export function email(...validators: Validator<string>[]): StandardSchemaV1<unkn
 export function number(...validators: Validator<number>[]): StandardSchemaV1<unknown, number> {
   return schema((value) => {
     if (typeof value === 'number') {
+      if (!isFinite(value)) {
+        return { issues: [{ message: SchemaErrors.expected_number }] };
+      }
       return validated(value, validators);
     }
 
-    if (typeof value === 'string' && value.length > 0 && !isNaN(Number(value)) && value.match(/^\d+(\.\d+)?$/)) {
-      return validated(Number(value), validators);
+    if (typeof value === 'string' && value.length > 0) {
+      const num = Number(value);
+      if (!isNaN(num) && isFinite(num)) {
+        return validated(num, validators);
+      }
     }
 
     return { issues: [{ message: SchemaErrors.expected_number }] };
@@ -62,6 +68,13 @@ export function number(...validators: Validator<number>[]): StandardSchemaV1<unk
  */
 export function timestamp(...validators: Validator<Date>[]): StandardSchemaV1<unknown, Date> {
   return schema((value) => {
+    if (value instanceof Date) {
+      if (isNaN(value.valueOf())) {
+        return { issues: [{ message: SchemaErrors.expected_valid_timestamp }] };
+      }
+      return validated(value, validators);
+    }
+
     if (typeof value !== 'number' && typeof value !== 'string') {
       return { issues: [{ message: SchemaErrors.expected_valid_timestamp }] };
     }
@@ -186,19 +199,7 @@ export function object<T extends SchemaProperties>(
   type Output = { [K in keyof T]: StandardSchemaV1.InferOutput<T[K]> };
 
   return schema((value) => {
-    if (typeof value === 'undefined' || value === null) {
-      return { issues: [{ message: SchemaErrors.expected_object }] };
-    }
-
-    if (typeof value === 'string') {
-      try {
-        value = JSON.parse(value);
-      } catch {
-        return { issues: [{ message: SchemaErrors.expected_object }] };
-      }
-    }
-
-    if (typeof value !== 'object') {
+    if (typeof value === 'undefined' || value === null || typeof value !== 'object') {
       return { issues: [{ message: SchemaErrors.expected_object }] };
     }
 

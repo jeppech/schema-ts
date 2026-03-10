@@ -26,7 +26,7 @@ const fd_array_key_rx = new RegExp(/(\w+)\[(.+)?\]/);
  */
 export function parse<Output>(
   schema: Schema<unknown, Output>,
-  data: FormData | Record<string, unknown>,
+  data: FormData | Record<string, unknown> | string,
 ): Result<Output, ValidationError[]> {
   let obj: Record<string, unknown>;
 
@@ -52,8 +52,14 @@ export function parse<Output>(
  */
 function formdata_to_object(fd: FormData): Record<string, unknown> {
   const obj: Record<string, unknown> = {};
+  const seen = new Set<string>();
 
   for (const key of fd.keys()) {
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+
     const [match, plain_key] = key.match(fd_array_key_rx) || [];
     if (!match) {
       obj[key] = fd.get(key);
