@@ -5,15 +5,57 @@ import type { StandardSchemaV1 } from './standard.js';
 
 export type { Schema } from './internal.js';
 
+export type StringCase = 'none' | 'lower' | 'upper' | 'formal';
+
+export type StringOptions = {
+  trim?: boolean;
+  case?: StringCase;
+};
+
+function is_string_options(value: unknown): value is StringOptions {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function apply_string_case(value: string, case_mode: StringCase): string {
+  if (case_mode === 'none') {
+    return value;
+  }
+
+  if (case_mode === 'lower') {
+    return value.toLowerCase();
+  }
+
+  if (case_mode === 'upper') {
+    return value.toUpperCase();
+  }
+
+  const lower = value.toLowerCase();
+
+  return lower.replace(/(^|[ \-'])[a-z]/g, (match) => match.toUpperCase());
+}
+
 /**
  * Parse input as a string.
  */
-export function string(...validators: Validator<string>[]): StandardSchemaV1<unknown, string> {
+export function string(...validators: Validator<string>[]): StandardSchemaV1<unknown, string>;
+export function string(options: StringOptions, ...validators: Validator<string>[]): StandardSchemaV1<unknown, string>;
+export function string(
+  ...args: [StringOptions, ...Validator<string>[]] | Validator<string>[]
+): StandardSchemaV1<unknown, string> {
+  const has_options = is_string_options(args[0]);
+  const options: StringOptions | undefined = has_options ? (args[0] as StringOptions) : undefined;
+  const validators = (has_options ? args.slice(1) : args) as Validator<string>[];
+
   return schema((value) => {
     if (typeof value !== 'string') {
       return { issues: [{ message: SchemaErrors.expected_string }] };
     }
-    return validated(value, validators);
+
+    const normalized = options?.trim ? value.trim() : value;
+    const case_mode = options?.case ?? 'none';
+    const transformed = apply_string_case(normalized, case_mode);
+
+    return validated(transformed, validators);
   });
 }
 

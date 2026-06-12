@@ -19,6 +19,7 @@ import * as v from '@jeppech/schema-ts'
 
 const userdata = {
   username: v.string(),
+  display_name: v.string({ trim: true, case: 'formal' }),
   age: v.number(),
   email: v.string(v.email()),
   created_at: v.timestamp(),
@@ -33,6 +34,7 @@ type User = v.InferObject<typeof userdata>
  *
  * type User = {
  *   username: string;
+ *   display_name: string;
  *   age: number;
  *   email: string;
  *   created_at: Date;
