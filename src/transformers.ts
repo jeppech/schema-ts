@@ -17,7 +17,7 @@ function is_empty(value: unknown): boolean {
  *
  * Any value that is undefined, null or an empty string will resolve to a `None` value.
  */
-export function option<T>(s: Schema<unknown, T>): Schema<unknown, Option<T>> {
+export function option<T, U = unknown>(s: Schema<U, T>): Schema<U | undefined, Option<T>> {
   return schema((value): StandardSchemaV1.Result<Option<T>> => {
     if (is_empty(value)) {
       return { value: None };
@@ -38,7 +38,7 @@ export function option<T>(s: Schema<unknown, T>): Schema<unknown, Option<T>> {
  *
  * Any value that is null, undefined or an empty string will resolve to undefined.
  */
-export function optional<T>(s: Schema<unknown, T>): Schema<unknown, T | undefined> {
+export function optional<T, U = unknown>(s: Schema<U, T>): Schema<U | undefined, T | undefined> {
   return schema((value): StandardSchemaV1.Result<T | undefined> => {
     if (is_empty(value)) {
       return { value: undefined };
@@ -53,7 +53,7 @@ export function optional<T>(s: Schema<unknown, T>): Schema<unknown, T | undefine
  *
  * Any value that is null, undefined or an empty string will resolve to null.
  */
-export function nullable<T>(s: Schema<unknown, T>): Schema<unknown, T | null> {
+export function nullable<T, U = unknown>(s: Schema<U, T>): Schema<U | undefined, T | null> {
   return schema((value): StandardSchemaV1.Result<T | null> => {
     if (is_empty(value)) {
       return { value: null };
@@ -68,7 +68,7 @@ export function nullable<T>(s: Schema<unknown, T>): Schema<unknown, T | null> {
  *
  * If the value is null, undefined or an empty string, the default value will be returned.
  */
-export function fallback<T>(s: Schema<unknown, T>, default_value: T): Schema<unknown, T> {
+export function fallback<T, U = unknown>(s: Schema<U, T>, default_value: T): Schema<U | undefined, T> {
   return schema((value) => {
     if (is_empty(value)) {
       return { value: default_value };
@@ -81,7 +81,7 @@ export function fallback<T>(s: Schema<unknown, T>, default_value: T): Schema<unk
 /**
  * Cast a value to a number.
  */
-export function to_number(s: Schema, ...validators: Validator<number>[]): Schema<unknown, number> {
+export function to_number<T>(s: Schema<T, unknown>, ...validators: Validator<number>[]): Schema<T, number> {
   return schema((value) => {
     if (typeof value === 'boolean') {
       return validated(value ? 1 : 0, validators);
@@ -106,7 +106,7 @@ export function to_number(s: Schema, ...validators: Validator<number>[]): Schema
 /**
  * Convert a string value to lowercase.
  */
-export function to_lowercase(...validators: Validator<string>[]): Schema<unknown, string> {
+export function to_lowercase(...validators: Validator<string>[]): Schema<string, string> {
   return schema((value) => {
     if (typeof value !== 'string') {
       return { issues: [{ message: SchemaErrors.expected_string }] };

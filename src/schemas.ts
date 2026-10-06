@@ -5,6 +5,13 @@ import type { StandardSchemaV1 } from './standard.js';
 
 export type { Schema } from './internal.js';
 
+/**
+ * Formats the string into the given case
+ * none (default): does nothing
+ * lower: converts to lowercase
+ * upper: converts to uppercase
+ * formal: converts to formal case, (e.g. "hello world" -> "Hello World")
+ */
 export type StringCase = 'none' | 'lower' | 'upper' | 'formal';
 
 export type StringOptions = {
@@ -37,11 +44,11 @@ function apply_string_case(value: string, case_mode: StringCase): string {
 /**
  * Parse input as a string.
  */
-export function string(...validators: Validator<string>[]): StandardSchemaV1<unknown, string>;
-export function string(options: StringOptions, ...validators: Validator<string>[]): StandardSchemaV1<unknown, string>;
+export function string(...validators: Validator<string>[]): StandardSchemaV1<string, string>;
+export function string(options: StringOptions, ...validators: Validator<string>[]): StandardSchemaV1<string, string>;
 export function string(
   ...args: [StringOptions, ...Validator<string>[]] | Validator<string>[]
-): StandardSchemaV1<unknown, string> {
+): StandardSchemaV1<string, string> {
   const has_options = is_string_options(args[0]);
   const options: StringOptions | undefined = has_options ? (args[0] as StringOptions) : undefined;
   const validators = (has_options ? args.slice(1) : args) as Validator<string>[];
@@ -65,7 +72,7 @@ const email_rx = /^(?!\.)(?!.*\.\.)([a-z0-9_'+\-\.]*)[a-z0-9_'+\-]@([a-z0-9][a-z
 /**
  * Parses input as e-mail, converted to lowercase.
  */
-export function email(...validators: Validator<string>[]): StandardSchemaV1<unknown, string> {
+export function email(...validators: Validator<string>[]): StandardSchemaV1<string, string> {
   return schema((value) => {
     if (typeof value !== 'string') {
       return { issues: [{ message: SchemaErrors.expected_string }] };
@@ -83,8 +90,11 @@ export function email(...validators: Validator<string>[]): StandardSchemaV1<unkn
 
 /**
  * Parse a string or number as a number.
+ * The inferred input defaults to string; use `number<string | number>()` for native numbers too.
  */
-export function number(...validators: Validator<number>[]): StandardSchemaV1<unknown, number> {
+export function number<T extends string | number = string>(
+  ...validators: Validator<number>[]
+): StandardSchemaV1<NoInfer<T>, number> {
   return schema((value) => {
     if (typeof value === 'number') {
       if (!isFinite(value)) {
@@ -107,8 +117,11 @@ export function number(...validators: Validator<number>[]): StandardSchemaV1<unk
 /**
  * Parse a string or number as a timestamp.
  * Accepts any values that can be parsed by the `Date` constructor.
+ * The inferred input defaults to string; select a broader input type for numbers or Dates.
  */
-export function timestamp(...validators: Validator<Date>[]): StandardSchemaV1<unknown, Date> {
+export function timestamp<T extends string | number | Date = string>(
+  ...validators: Validator<Date>[]
+): StandardSchemaV1<NoInfer<T>, Date> {
   return schema((value) => {
     if (value instanceof Date) {
       if (isNaN(value.valueOf())) {
@@ -133,8 +146,11 @@ export function timestamp(...validators: Validator<Date>[]): StandardSchemaV1<un
 
 /**
  * Matches the different behavior of HTML checkboxes, that I have seen in the wild.
+ * The inferred input defaults to string | undefined; runtime coercion is unchanged.
  */
-export function checkbox(...validators: Validator<boolean>[]): StandardSchemaV1<unknown, boolean> {
+export function checkbox<T extends string | boolean | number | null | undefined = string | undefined>(
+  ...validators: Validator<boolean>[]
+): StandardSchemaV1<NoInfer<T>, boolean> {
   return schema((value) => {
     if (typeof value === 'undefined' || value === null) {
       return validated(false, validators);
@@ -164,8 +180,11 @@ export function checkbox(...validators: Validator<boolean>[]): StandardSchemaV1<
 
 /**
  * Test if a value is a boolean, or the exact string 'true' or 'false'
+ * The inferred input defaults to string; use `bool<string | boolean>()` for native booleans too.
  */
-export function bool(...validators: Validator<boolean>[]): StandardSchemaV1<unknown, boolean> {
+export function bool<T extends string | boolean = string>(
+  ...validators: Validator<boolean>[]
+): StandardSchemaV1<NoInfer<T>, boolean> {
   return schema((value) => {
     if (typeof value === 'boolean') {
       return validated(value, validators);
@@ -182,7 +201,7 @@ export function bool(...validators: Validator<boolean>[]): StandardSchemaV1<unkn
 /**
  * Expects the value to be one of the literals defined in the `expected` array.
  */
-export function literal<const T>(expected: T | T[], err = SchemaErrors.invalid_value): StandardSchemaV1<unknown, T> {
+export function literal<const T>(expected: T | T[], err = SchemaErrors.invalid_value): StandardSchemaV1<T, T> {
   const expected_arr = Array.isArray(expected) ? expected : [expected];
 
   return schema((value): StandardSchemaV1.Result<T> => {
@@ -197,10 +216,10 @@ export function literal<const T>(expected: T | T[], err = SchemaErrors.invalid_v
 /**
  * Expects a value to be an array where each item matches the given schema.
  */
-export function list<T>(
-  item_schema: StandardSchemaV1<unknown, T>,
+export function list<T, U = unknown>(
+  item_schema: StandardSchemaV1<U, T>,
   ...validators: Validator<T[]>[]
-): StandardSchemaV1<unknown, T[]> {
+): StandardSchemaV1<U[], T[]> {
   return schema((value) => {
     if (!Array.isArray(value)) {
       return { issues: [{ message: SchemaErrors.expected_array }] };
@@ -237,10 +256,14 @@ export function list<T>(
  */
 export function object<T extends SchemaProperties>(
   struct: T,
-): StandardSchemaV1<Record<string, unknown>, { [K in keyof T]: StandardSchemaV1.InferOutput<T[K]> }> {
+): StandardSchemaV1<
+  { [K in keyof T]: StandardSchemaV1.InferInput<T[K]> },
+  { [K in keyof T]: StandardSchemaV1.InferOutput<T[K]> }
+> {
+  type Input = { [K in keyof T]: StandardSchemaV1.InferInput<T[K]> };
   type Output = { [K in keyof T]: StandardSchemaV1.InferOutput<T[K]> };
 
-  return schema((value) => {
+  return schema<Output, Input>((value) => {
     if (typeof value === 'undefined' || value === null) {
       return { issues: [{ message: SchemaErrors.expected_object }] };
     }
@@ -282,5 +305,5 @@ export function object<T extends SchemaProperties>(
     }
 
     return { value: parsed as Output };
-  }) as StandardSchemaV1<Record<string, unknown>, Output>;
+  });
 }

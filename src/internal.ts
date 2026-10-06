@@ -10,9 +10,9 @@ const vendor = '@jeppech/schema-ts';
 export type Schema<Input = unknown, Output = Input> = StandardSchemaV1<Input, Output>;
 
 /**
- * Helper to create a Schema object.
+ * Create a Schema with declared input metadata. Validation always receives unknown values.
  */
-export function schema<Output>(validate: (value: unknown) => StandardSchemaV1.Result<Output>): Schema<unknown, Output> {
+export function schema<T, U = unknown>(validate: (value: unknown) => StandardSchemaV1.Result<T>): Schema<U, T> {
   return {
     '~standard': {
       version: 1,
