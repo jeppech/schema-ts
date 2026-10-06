@@ -1,11 +1,11 @@
 # Validate unknown data
 [![npm package version](https://img.shields.io/npm/v/@jeppech/schema-ts)](https://npmjs.com/package/@jeppech/schema-ts)
 
-Small library for creating schemas, that can validate and assert unknown data.
+Small library for creating schemas that validate and assert unknown data.
 
-> someone: Why not use valibot
-> me: We have valibot at home...
-> valibot at home:
+> someone: Why not use valibot  
+> me: We have valibot at home...  
+> valibot at home: 👇
 
 ## Install
 ```sh
@@ -15,7 +15,7 @@ pnpm add @jeppech/schema-ts
 ## Usage
 
 ```ts
-import * as v from '@jeppech/schema-ts'
+import * as v from '@jeppech/schema-ts';
 
 const userdata = {
   username: v.string(),
@@ -24,13 +24,12 @@ const userdata = {
   email: v.string(v.email()),
   created_at: v.timestamp(),
   deleted: v.optional(v.timestamp()),
-  have_you_heard_about_our_extended_warranty: v.bool()
-}
+  have_you_heard_about_our_extended_warranty: v.bool(),
+};
 
-type User = v.InferObject<typeof userdata>
+type User = v.InferObject<typeof userdata>;
 /**
- * The `User` type will have the following shape, and
- * will following any changes made to the object above.
+ * The `User` type will reflect any changes made to the schema above.
  *
  * type User = {
  *   username: string;
@@ -43,34 +42,88 @@ type User = v.InferObject<typeof userdata>
  * }
  */
 
-const form = new FormData() // from a request, eg. `await req.formData()`
+const form = new FormData(); // from a request, e.g. `await req.formData()`
 
-const result = v.parse(form, userdata)
+const result = v.parse(form, userdata);
 
 if (result.is_err()) {
-  // Contains a list of errors, WIP
-  console.log(result.unwrap_err())
+  console.log(result.unwrap_err());
 } else {
-  // Returns the `User` object
-  const user = result.unwrap()
+  const user = result.unwrap();
 }
 ```
 
+## String options
+
+`v.string()` accepts an optional options object before validators:
+
+```ts
+v.string({ trim: true, case: 'formal' });
+```
+
+Supported case modes:
+
+- `none`
+- `lower`
+- `upper`
+- `formal`
+
+`formal` lowercases the input first, then uppercases the first letter after spaces, dashes, and apostrophes.
+
+## SvelteKit environment variables
+
+The built-in string and coercing schemas work directly with SvelteKit's `defineEnvVars`, without an adapter:
+
+```ts
+import { defineEnvVars } from '@sveltejs/kit/env';
+import * as v from '@jeppech/schema-ts';
+
+export const variables = defineEnvVars({
+  FEATURE_ENABLED: { schema: v.bool() },
+  PORT: { schema: v.fallback(v.number(v.minmax(1, 65535)), 3000) },
+  OPTIONAL_SECRET: { schema: v.optional(v.string()) },
+});
+```
+
+`bool()` accepts the strings `'true'` and `'false'`. Missing values fail validation unless the schema is wrapped
+in `optional()` or `fallback()`. A fallback applies to missing or empty values, not invalid non-empty values.
+
+### Standard Schema input types
+
+Input metadata describes the schema's declared input before conversion; `validate()` still accepts unknown values.
+The type declarations require TypeScript 5.4 or newer.
+`string()`, `email()`, `number()`, `bool()`, `timestamp()` and `to_lowercase()` declare string inputs by default.
+`checkbox()` declares `string | undefined`. Wrappers preserve the inner input type and add `undefined`.
+They also continue treating `null` and empty strings as empty at runtime.
+
+Runtime behavior is unchanged: native booleans, numbers and Dates are still supported where they were previously.
+To include those values in inferred input types, explicitly choose a broader input:
+
+```ts
+v.bool<string | boolean>();
+v.number<string | number>();
+v.timestamp<string | number | Date>();
+v.checkbox<string | boolean | number | null | undefined>();
+```
+
+These broader inputs are for general-purpose schemas, not SvelteKit env schemas, whose inputs must be strings or
+`undefined`. Literal, list and object schemas infer their inputs from the literals or child schemas.
+
 # Extending
-You can add your own `Valuers` and `Validators`, they are just simple functions.
+You can add your own valuers and validators. They are just simple functions.
 
 ## Valuer
-A `Valuer` is a function, which job is to assert, that the input value is of the type that we want, and return that type.
+A valuer asserts that the input value is the type we want and returns that type.
 
-If this assertion fails, it must throw a `ValidationError`.
+If the assertion fails, it must throw a `ValidationError`.
 
-The built-in Valuers takes a **variadic number of Validators**, which is used to validated the returned value, if needed.
+The built-in valuers take a variadic number of validators, which are used to validate the returned value if needed.
 
-Here's an example of a Valuer, that requires the property to be either `admin`, `user` or `anonymous`. This could also be made as a `Validator`, but using a `Valuer` we are returned the concrete type.
+Here's an example of a valuer that requires the property to be either `admin`, `user`, or `anonymous`. This could also be made as a validator, but using a valuer returns the concrete type.
 
 ```ts
 const roles = ['admin', 'user', 'anonymous'] as const;
-type UserRole = typeof roles[number]
+type UserRole = (typeof roles)[number];
 
 export function role(...validators: v.Validator<UserRole>[]) {
   return (value: unknown, field: string) => {
@@ -85,22 +138,22 @@ export function role(...validators: v.Validator<UserRole>[]) {
 
 const user = {
   name: v.string(),
-  role: v.role()
-}
+  role: v.role(),
+};
 
-type UserWithRole = v.InferObject<typeof user>
+type UserWithRole = v.InferObject<typeof user>;
 ```
 See [src/valuers.ts](src/valuers.ts) for more examples
 
 
 ## Validator
-A `Validator` is a function, that is passed as any other argument, besides the first, to the `v.as(...)` function.
+A validator is a function that is passed after the main schema argument.
 
-A Validators job is, as the name implies, to validate the input data. If a validation succeeds it must return `void`/`undefined`. If it fails, it must return a ValidationError.
+A validator's job is to validate the input data. If validation succeeds, it must return `void` or `undefined`. If it fails, it must return a `ValidationError`.
 
-As a Validator comes __after__ a Valuer, we can expect an exact type as input data, for the function.
+Because a validator comes after a valuer, it can expect the exact output type from that valuer.
 
-Here's an example of a Validator, that requires a timestamp to be in the future
+Here's an example of a validator that requires a timestamp to be in the future.
 ```ts
 function in_the_future(err = 'expected a timestamp in the future') {
   return (value: Date, field: string) => {
@@ -113,10 +166,10 @@ function in_the_future(err = 'expected a timestamp in the future') {
 
 const notification = {
   message: v.string(),
-  fire_at: v.timestamp(in_the_future())
-}
+  fire_at: v.timestamp(in_the_future()),
+};
 
-type NotifyInFuture = v.InferObject<typeof notification>
+type NotifyInFuture = v.InferObject<typeof notification>;
 ```
 See [src/validators.ts](src/validators.ts) for more examples
 

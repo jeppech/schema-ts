@@ -1,6 +1,6 @@
 {
   "name": "@jeppech/schema-ts",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Create schemas for validating unknown data",
   "author": "Jeppe Christiansen",
   "license": "ISC",
@@ -29,7 +29,8 @@
     "lint": "eslint src/",
     "clean": "rm -rf ./lib/**/*",
     "build": "pnpm clean && tsc -p tsconfig.json",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "pnpm build && pnpm test:types && node --test tests/*.test.mjs",
+    "test:types": "tsc -p tests/tsconfig.json"
   },
   "keywords": [
     "schema",
@@ -41,6 +42,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
+    "@standard-schema/spec": "^1.1.0",
     "@typescript-eslint/eslint-plugin": "^8.61.0",
     "@typescript-eslint/parser": "^8.61.0",
     "eslint": "^10.4.1",
