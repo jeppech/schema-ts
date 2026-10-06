@@ -115,3 +115,38 @@ export function to_lowercase(...validators: Validator<string>[]): Schema<string,
     return validated(value.toLowerCase(), validators);
   });
 }
+
+/**
+ * Converts an interval expression into seconds
+ */
+export function interval(...validators: Validator<number>[]): Schema<string, number> {
+  return schema((value) => {
+    if (typeof value !== 'string') {
+      return { issues: [{ message: SchemaErrors.expected_string }] };
+    }
+    return validated(interval_to_seconds(value), validators)
+  });
+}
+
+function interval_to_seconds(interval: string): number {
+  const match = interval.match(/^(\d+)([smhd])$/);
+	if (!match) {
+		throw new Error(`cannot parse '${interval}; as interval`);
+	}
+
+	const value = parseInt(match[1], 10);
+	const unit = match[2];
+
+	switch (unit) {
+		case 's':
+			return value;
+		case 'm':
+			return value * 60;
+		case 'h':
+			return value * 60 * 60;
+		case 'd':
+			return value * 60 * 60 * 24;
+	}
+
+	throw new Error(`Invalid interval: ${interval}`);
+}
