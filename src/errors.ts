@@ -2,6 +2,7 @@ export const SchemaErrors = {
   invalid_value: 'invalid_value',
   out_of_range: 'out_of_range',
   invalid_length: 'invalid_length',
+  empty_value: 'empty_value',
   invalid_formatted_email: 'invalid_formatted_email',
   unknown_error: 'unknown_error',
   expected_string: 'expected_string',

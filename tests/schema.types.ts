@@ -16,6 +16,7 @@ declare function defineEnvVars<T extends Record<string, EnvVarConfig<unknown>>>(
 
 const variables = defineEnvVars({
   API_URL: { schema: v.string() },
+  REQUIRED_SECRET: { schema: v.string({ trim: true }, v.non_empty()) },
   EMAIL: { schema: v.email() },
   FEATURE_ENABLED: { schema: v.bool() },
   SHOW_OVERLAY: { schema: v.checkbox(), public: true, static: true },
@@ -96,3 +97,9 @@ const invalid_output: StandardSchemaV1<string | undefined, string> = variables.F
 
 // @ts-expect-error Contextual typing must not override the default string input.
 const contextual_boolean: StandardSchemaV1<boolean, boolean> = v.bool();
+
+const non_empty_validator: v.Validator<string> = v.non_empty('Please enter a name');
+const non_empty_schema = v.string({ trim: true }, non_empty_validator);
+type NonEmptyOutput = Assert<Equal<StandardSchemaV1.InferOutput<typeof non_empty_schema>, string>>;
+// @ts-expect-error Non-empty string validation is not a number validator.
+v.number(v.non_empty());

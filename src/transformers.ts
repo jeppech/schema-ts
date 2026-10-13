@@ -124,29 +124,29 @@ export function interval(...validators: Validator<number>[]): Schema<string, num
     if (typeof value !== 'string') {
       return { issues: [{ message: SchemaErrors.expected_string }] };
     }
-    return validated(interval_to_seconds(value), validators)
+    return validated(interval_to_seconds(value), validators);
   });
 }
 
 function interval_to_seconds(interval: string): number {
   const match = interval.match(/^(\d+)([smhd])$/);
-	if (!match) {
-		throw new Error(`cannot parse '${interval}; as interval`);
-	}
+  if (!match) {
+    throw new Error(`cannot parse '${interval}; as interval`);
+  }
 
-	const value = parseInt(match[1], 10);
-	const unit = match[2];
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
 
-	switch (unit) {
-		case 's':
-			return value;
-		case 'm':
-			return value * 60;
-		case 'h':
-			return value * 60 * 60;
-		case 'd':
-			return value * 60 * 60 * 24;
-	}
+  switch (unit) {
+    case 's':
+      return value;
+    case 'm':
+      return value * 60;
+    case 'h':
+      return value * 60 * 60;
+    case 'd':
+      return value * 60 * 60 * 24;
+  }
 
-	throw new Error(`Invalid interval: ${interval}`);
+  throw new Error(`Invalid interval: ${interval}`);
 }

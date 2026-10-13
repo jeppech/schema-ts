@@ -70,6 +70,28 @@ Supported case modes:
 
 `formal` lowercases the input first, then uppercases the first letter after spaces, dashes, and apostrophes.
 
+### Non-empty strings
+
+`v.string()` accepts empty strings by default. Add `v.non_empty()` to reject `''`:
+
+```ts
+v.string(v.non_empty());
+```
+
+`non_empty()` does not trim: whitespace-only strings such as `'   '` are still non-empty.
+Combine it with `trim: true` to reject whitespace-only input and trim valid strings:
+
+```ts
+v.string({ trim: true }, v.non_empty());
+// '' and '   ' fail; '  hello  ' becomes 'hello'.
+
+v.string({ trim: true }, v.non_empty('Please enter a name'));
+```
+
+Trimming runs before validators. The default validation error is `empty_value`, or you can supply a custom message.
+`v.optional(v.string({ trim: true }, v.non_empty()))` treats `''` as absent before validation, but whitespace-only
+strings reach the inner schema and fail after trimming.
+
 ## SvelteKit environment variables
 
 The built-in string and coercing schemas work directly with SvelteKit's `defineEnvVars`, without an adapter:

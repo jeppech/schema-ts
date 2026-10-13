@@ -1,4 +1,17 @@
 import { SchemaErrors, ValidationError } from './errors.js';
+import type { SchemaError } from './errors.js';
+
+/**
+ * The string must not be empty.
+ * Combine with `string({ trim: true }, non_empty())` to reject whitespace-only strings.
+ */
+export function non_empty(err: SchemaError = SchemaErrors.empty_value) {
+  return (value: string, field: string) => {
+    if (value.length === 0) {
+      return new ValidationError(err, value, field);
+    }
+  };
+}
 
 /**
  * The value must be an exact match of `expected`.
