@@ -79,3 +79,12 @@ test('object and list parsing preserve native values, JSON and issue paths', () 
   data.append('ports[]', '3000');
   deepStrictEqual(v.parse(schema, data).unwrap(), { enabled: false, ports: [3000] });
 });
+
+test('parse reports field names without a leading dot', () => {
+  const schema = v.object({ name: v.string(v.length(1, 3)), address: v.object({ city: v.string() }) });
+  const errors = v.parse(schema, { name: 'too long', address: { city: 1 } }).unwrap_err();
+  deepStrictEqual(
+    errors.map((error) => error.field),
+    ['name', 'address.city'],
+  );
+});

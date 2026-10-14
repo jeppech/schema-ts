@@ -9,7 +9,8 @@ import type { Schema } from './internal.js';
 function issues_to_errors(issues: ReadonlyArray<StandardSchemaV1.Issue>, field: string): ValidationError[] {
   return issues.map((issue) => {
     const path = issue.path ? issue.path.map((p) => (typeof p === 'object' ? p.key : p)).join('.') : '';
-    const full_field = path ? `${field}.${path}` : field;
+    // Only join with a dot when both parts exist, so top-level fields aren't prefixed, eg. `.name`.
+    const full_field = [field, path].filter(Boolean).join('.');
     return new ValidationError(issue.message, undefined, full_field);
   });
 }
